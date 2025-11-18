@@ -1,0 +1,646 @@
+[
+  {
+    "flightNumber": "EK0502",
+    "eta": "13:00",
+    "boardingPoint": "DXB-BOM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0979",
+    "eta": "13:00",
+    "boardingPoint": "DXB-IKA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0566",
+    "eta": "13:45",
+    "boardingPoint": "DXB-BLR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0903",
+    "eta": "14:05",
+    "boardingPoint": "DXB-AMM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0067",
+    "eta": "14:15",
+    "boardingPoint": "DXB-STN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0003",
+    "eta": "14:15",
+    "boardingPoint": "DXB-LHR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0057",
+    "eta": "14:20",
+    "boardingPoint": "DXB-DUS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0121",
+    "eta": "14:20",
+    "boardingPoint": "DXB-IST",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0193",
+    "eta": "14:25",
+    "boardingPoint": "DXB-LIS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0143",
+    "eta": "14:30",
+    "boardingPoint": "DXB-MAD",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0019",
+    "eta": "14:30",
+    "boardingPoint": "DXB-MAN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0083",
+    "eta": "14:30",
+    "boardingPoint": "DXB-GVA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0765",
+    "eta": "14:40",
+    "boardingPoint": "DXB-JNB",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0075",
+    "eta": "14:40",
+    "boardingPoint": "DXB-CDG",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0149",
+    "eta": "14:45",
+    "boardingPoint": "DXB-AMS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0546",
+    "eta": "14:50",
+    "boardingPoint": "DXB-MAA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0009",
+    "eta": "14:55",
+    "boardingPoint": "DXB-LGW",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0037",
+    "eta": "14:55",
+    "boardingPoint": "DXB-BHX",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0364",
+    "eta": "15:00",
+    "boardingPoint": "DXB-SGN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0564",
+    "eta": "15:00",
+    "boardingPoint": "DXB-BLR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0504",
+    "eta": "15:10",
+    "boardingPoint": "DXB-BOM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0081",
+    "eta": "15:20",
+    "boardingPoint": "DXB-LYS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0701",
+    "eta": "15:20",
+    "boardingPoint": "DXB-MRU",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0556",
+    "eta": "15:25",
+    "boardingPoint": "DXB-BLR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0769",
+    "eta": "15:40",
+    "boardingPoint": "DXB-JNB",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0007",
+    "eta": "15:45",
+    "boardingPoint": "DXB-LHR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0332",
+    "eta": "15:45",
+    "boardingPoint": "DXB-MNL",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0554",
+    "eta": "15:45",
+    "boardingPoint": "DXB-BLR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0506",
+    "eta": "15:50",
+    "boardingPoint": "DXB-BOM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0376",
+    "eta": "16:00",
+    "boardingPoint": "DXB-BKK",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0316",
+    "eta": "16:00",
+    "boardingPoint": "DXB-KIX",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0101",
+    "eta": "16:00",
+    "boardingPoint": "DXB-DME",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0520",
+    "eta": "16:00",
+    "boardingPoint": "DXB-DEL",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0608",
+    "eta": "16:05",
+    "boardingPoint": "DXB-KHI",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0320",
+    "eta": "16:20",
+    "boardingPoint": "DXB-ICN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0053",
+    "eta": "16:25",
+    "boardingPoint": "DXB-FRA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0125",
+    "eta": "16:25",
+    "boardingPoint": "DXB-IST",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0105",
+    "eta": "16:30",
+    "boardingPoint": "DXB-CPH",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0775",
+    "eta": "16:35",
+    "boardingPoint": "DXB-CPT",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0602",
+    "eta": "16:45",
+    "boardingPoint": "DXB-ISB",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0065",
+    "eta": "16:50",
+    "boardingPoint": "DXB-STN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0137",
+    "eta": "16:55",
+    "boardingPoint": "DXB-PRG",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0725",
+    "eta": "17:00",
+    "boardingPoint": "DXB-NBO",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0747",
+    "eta": "17:00",
+    "boardingPoint": "DXB-TUN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0011",
+    "eta": "17:05",
+    "boardingPoint": "DXB-LGW",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0127",
+    "eta": "17:15",
+    "boardingPoint": "DXB-VIE",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0352",
+    "eta": "17:15",
+    "boardingPoint": "DXB-SIN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0051",
+    "eta": "17:20",
+    "boardingPoint": "DXB-FRA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0540",
+    "eta": "17:20",
+    "boardingPoint": "DXB-MAA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0045",
+    "eta": "17:25",
+    "boardingPoint": "DXB-FRA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0558",
+    "eta": "17:25",
+    "boardingPoint": "DXB-BLR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0071",
+    "eta": "17:30",
+    "boardingPoint": "DXB-CDG",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0201",
+    "eta": "17:30",
+    "boardingPoint": "DXB-JFK",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0867",
+    "eta": "17:30",
+    "boardingPoint": "DXB-MCT",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0310",
+    "eta": "17:35",
+    "boardingPoint": "DXB-SIN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0330",
+    "eta": "17:35",
+    "boardingPoint": "DXB-MNL",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0061",
+    "eta": "17:45",
+    "boardingPoint": "DXB-HAM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0043",
+    "eta": "17:50",
+    "boardingPoint": "DXB-FRA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0049",
+    "eta": "17:50",
+    "boardingPoint": "DXB-MUC",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0069",
+    "eta": "18:00",
+    "boardingPoint": "DXB-STN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0005",
+    "eta": "18:15",
+    "boardingPoint": "DXB-LHR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0097",
+    "eta": "18:30",
+    "boardingPoint": "DXB-FCO",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0456",
+    "eta": "18:30",
+    "boardingPoint": "DXB-DUR-JNB",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0089",
+    "eta": "18:40",
+    "boardingPoint": "DXB-GVA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0526",
+    "eta": "18:40",
+    "boardingPoint": "DXB-HYD",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0163",
+    "eta": "18:55",
+    "boardingPoint": "DXB-ATH-MLA",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0731",
+    "eta": "19:00",
+    "boardingPoint": "DXB-EBB-KGL",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0326",
+    "eta": "19:00",
+    "boardingPoint": "DXB-ICN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0047",
+    "eta": "19:00",
+    "boardingPoint": "DXB-DUS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0318",
+    "eta": "19:00",
+    "boardingPoint": "DXB-NRT",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0763",
+    "eta": "19:15",
+    "boardingPoint": "DXB-CPT",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0173",
+    "eta": "19:25",
+    "boardingPoint": "DXB-BCN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0322",
+    "eta": "19:30",
+    "boardingPoint": "DXB-ICN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0001",
+    "eta": "19:45",
+    "boardingPoint": "DXB-LHR",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0029",
+    "eta": "19:45",
+    "boardingPoint": "DXB-LBH",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0161",
+    "eta": "19:45",
+    "boardingPoint": "DXB-BCN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0087",
+    "eta": "19:50",
+    "boardingPoint": "DXB-ZRH",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0312",
+    "eta": "19:55",
+    "boardingPoint": "DXB-SIN",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0528",
+    "eta": "20:00",
+    "boardingPoint": "DXB-HYD",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0063",
+    "eta": "20:10",
+    "boardingPoint": "DXB-HAM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0129",
+    "eta": "20:20",
+    "boardingPoint": "DXB-DME",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0703",
+    "eta": "20:30",
+    "boardingPoint": "DXB-MRU",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0147",
+    "eta": "20:35",
+    "boardingPoint": "DXB-AMS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0195",
+    "eta": "20:35",
+    "boardingPoint": "DXB-ATH",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0145",
+    "eta": "20:45",
+    "boardingPoint": "DXB-AMS",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0059",
+    "eta": "20:50",
+    "boardingPoint": "DXB-HAM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0524",
+    "eta": "22:00",
+    "boardingPoint": "DXB-HYD",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0925",
+    "eta": "22:00",
+    "boardingPoint": "DXB-CAI",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0905",
+    "eta": "22:10",
+    "boardingPoint": "DXB-AMM",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0374",
+    "eta": "22:30",
+    "boardingPoint": "DXB-BKK",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0538",
+    "eta": "22:50",
+    "boardingPoint": "DXB-AMD",
+    "uldCount": 0,
+    "ulds": []
+  },
+  {
+    "flightNumber": "EK0767",
+    "eta": "23:20",
+    "boardingPoint": "DXB-JNB",
+    "uldCount": 0,
+    "ulds": []
+  }
+]
