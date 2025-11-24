@@ -17,6 +17,7 @@ import LoadPlanScreen from "@/components/load-plan-screen"
 import BottomNav from "@/components/bottom-nav"
 import { FlightProvider, useFlights } from "@/lib/flight-context"
 import { ExportFlightProvider, useExportFlights } from "@/lib/export-flight-context"
+import { LoadPlanLogProvider } from "@/lib/load-plan-log-context"
 import type { Flight, ULD } from "@/lib/flight-data"
 
 function AppContent() {
@@ -270,10 +271,12 @@ function getRandomName(): string {
 
 export default function Page() {
   return (
-    <ExportFlightProvider>
-      <FlightProvider>
-        <AppContent />
-      </FlightProvider>
-    </ExportFlightProvider>
+    <LoadPlanLogProvider>
+      <ExportFlightProvider>
+        <FlightProvider>
+          <AppContent />
+        </FlightProvider>
+      </ExportFlightProvider>
+    </LoadPlanLogProvider>
   )
 }
