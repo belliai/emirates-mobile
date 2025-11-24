@@ -413,6 +413,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
                                     } : undefined}
+                                    onTouchStart={isReadOnly ? (e) => {
+                                      e.stopPropagation()
+                                      setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                      setShowULDModal(true)
+                                    } : undefined}
                                   >
                                     {uldSection.uld}
                                   </div>
@@ -770,6 +775,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
                                     } : undefined}
+                                    onTouchStart={isReadOnly ? (e) => {
+                                      e.stopPropagation()
+                                      setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                      setShowULDModal(true)
+                                    } : undefined}
                                   >
                                     {uldSection.uld}
                                   </div>
@@ -1032,6 +1042,12 @@ function AWBSplitRow({
               onLeftClick()
             }
           }}
+          onTouchStart={(e) => {
+            if (isReadOnly && onLeftClick) {
+              e.stopPropagation()
+              onLeftClick()
+            }
+          }}
         >
           {awb[field.key] || "-"}
         </div>
@@ -1046,6 +1062,12 @@ function AWBSplitRow({
           onMouseEnter={() => isReadOnly && setHoveredSection("right")}
           onMouseLeave={() => setHoveredSection(null)}
           onClick={(e) => {
+            if (isReadOnly && onRightClick) {
+              e.stopPropagation()
+              onRightClick()
+            }
+          }}
+          onTouchStart={(e) => {
             if (isReadOnly && onRightClick) {
               e.stopPropagation()
               onRightClick()

@@ -205,6 +205,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                           {field.label}
                         </div>
                       ))}
+                      <div className="px-2 py-2 flex-shrink-0" style={{ width: "80px" }}>
+                        Remaining
+                      </div>
                     </div>
                   </div>
 
@@ -243,6 +246,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                 isHovered={isHovered}
                                 isReadOnly={isReadOnly}
                                 assignmentUld={assignmentUld}
+                                awbComments={awbComments}
                                 onLeftSectionClick={() => {
                                   setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                   setShowQuickActionModal(true)
@@ -323,6 +327,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                     isHovered={isHovered}
                                     isReadOnly={isReadOnly}
                                     assignmentUld={assignmentUld}
+                                    awbComments={awbComments}
                                     onLeftSectionClick={() => {
                                       setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                       setShowQuickActionModal(true)
@@ -425,6 +430,7 @@ interface AWBRowProps {
   isHovered: boolean
   isReadOnly: boolean
   assignmentUld: string | null
+  awbComments?: AWBComment[]
   onLeftSectionClick: () => void
   onMouseEnter: () => void
   onMouseLeave: () => void
@@ -438,6 +444,7 @@ function AWBRow({
   isHovered,
   isReadOnly,
   assignmentUld,
+  awbComments,
   onLeftSectionClick,
   onMouseEnter,
   onMouseLeave,
@@ -447,6 +454,19 @@ function AWBRow({
 
   const leftFields = awbFields.slice(0, 8) // SER through SHC
   const rightFields = awbFields.slice(8) // MAN.DESC onward
+  
+  // Extract remaining pieces from offload comments
+  const getRemainingPieces = (): string | null => {
+    if (!awbComments) return null
+    const comment = awbComments.find((c: AWBComment) => c.awbNo === awb.awbNo && c.status === "offloaded")
+    if (comment?.remarks) {
+      const piecesMatch = comment.remarks.match(/Remaining\s+(\d+)\s+pieces\s+offloaded/i)
+      return piecesMatch ? piecesMatch[1] : null
+    }
+    return null
+  }
+  
+  const remainingPieces = getRemainingPieces()
 
   return (
     <div
@@ -486,6 +506,18 @@ function AWBRow({
           {awb[field.key] || "-"}
         </div>
       ))}
+      
+      {/* Remaining column - rightmost */}
+      <div
+        className="px-2 py-1 flex-shrink-0"
+        style={{ width: "80px" }}
+      >
+        {remainingPieces ? (
+          <span className="text-xs text-orange-600 font-semibold">{remainingPieces}</span>
+        ) : (
+          <span className="text-xs text-gray-400">-</span>
+        )}
+      </div>
     </div>
   )
 }
