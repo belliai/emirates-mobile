@@ -7,12 +7,8 @@ import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
 import { ULDNumberModal } from "./uld-number-modal"
 import { parseULDSection, formatULDSection } from "@/lib/uld-parser"
 import { AWBQuickActionModal } from "./awb-quick-action-modal"
-// AWB Comment type for offload tracking
-type AWBComment = {
-  awbNo: string
-  status: "offloaded" | "completed" | "split" | "pending" | "hold" | "late"
-  remarks?: string
-}
+import BCRModal, { generateBCRData } from "./bcr-modal"
+import type { AWBComment } from "./bcr-modal"
 
 type AWBAssignment = {
   awbNo: string
@@ -29,6 +25,7 @@ interface MobileLoadPlanDetailScreenProps {
 }
 
 export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileLoadPlanDetailScreenProps) {
+  const [showBCRModal, setShowBCRModal] = useState(false)
   const [awbAssignments, setAwbAssignments] = useState<Map<string, AWBAssignment>>(new Map())
   const [awbComments, setAwbComments] = useState<AWBComment[]>([])
   const [hoveredUld, setHoveredUld] = useState<string | null>(null)
@@ -154,16 +151,24 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button onClick={onBack} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-2 sm:px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <button onClick={onBack} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </button>
+            <h1 className="text-base font-semibold text-gray-900">Load Plan Detail</h1>
+          </div>
+          <button
+            onClick={() => setShowBCRModal(true)}
+            className="px-3 py-1.5 text-xs font-medium text-white bg-[#D71A21] hover:bg-[#B0151A] rounded-md transition-colors"
+          >
+            Generate BCR
           </button>
-          <h1 className="text-base font-semibold text-gray-900">Load Plan Detail</h1>
         </div>
         
         {/* Flight Header Row */}
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 mt-2">
+        <div className="grid grid-cols-2 gap-1 sm:gap-2 text-xs text-gray-700 mt-2">
           <div><span className="font-semibold">Flight:</span> {loadPlan.flight}</div>
           <div><span className="font-semibold">Date:</span> {loadPlan.date}</div>
           <div><span className="font-semibold">ACFT TYPE:</span> {loadPlan.acftType}</div>
@@ -176,7 +181,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
       </div>
 
       {/* Content */}
-      <div className="bg-gray-50 p-4">
+      <div className="bg-gray-50 p-2 sm:p-4">
         {loadPlan.sectors.map((sector, sectorIndex) => {
           const regularSections = sector.uldSections.filter((s) => !s.isRampTransfer)
           const rampTransferSections = sector.uldSections.filter((s) => s.isRampTransfer)
@@ -400,6 +405,14 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
           onMarkOffload={handleMarkAWBOffload}
         />
       )}
+
+      {/* BCR Modal */}
+      <BCRModal
+        isOpen={showBCRModal}
+        onClose={() => setShowBCRModal(false)}
+        loadPlan={loadPlan}
+        bcrData={generateBCRData(loadPlan, awbComments, awbAssignments, uldNumbers)}
+      />
     </div>
   )
 }
@@ -495,9 +508,10 @@ function ULDRow({ uld, uldNumbers, isReadOnly, onClick, isRampTransfer }: ULDRow
   
   return (
     <div className={`flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] ${isRampTransfer ? "bg-gray-50" : ""}`}>
-      <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
+      <div className="flex items-center flex-1 px-2 py-1">
+        {/* Left: ULD Numbers (if exist) */}
         {hasULDNumbers && (
-          <div className="group relative flex-shrink-0">
+          <div className="group relative flex-shrink-0 mr-2">
             <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
               {displayNumbers}
             </div>
@@ -507,14 +521,16 @@ function ULDRow({ uld, uldNumbers, isReadOnly, onClick, isRampTransfer }: ULDRow
             </div>
           </div>
         )}
+        {/* Center: ULD Section (grows to fill space, but allows Final to stay right) */}
         <div 
-          className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+          className={`flex-1 text-center min-w-0 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
           onClick={isReadOnly ? onClick : undefined}
         >
           {uld}
         </div>
+        {/* Right: Final Section (always on the right edge, ml-auto pushes it to the right) */}
         {finalSection && (
-          <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+          <div className="text-xs font-normal text-gray-600 flex-shrink-0 ml-auto pl-3 border-l border-gray-200 whitespace-nowrap">
             Final: <span className="font-mono font-semibold">{finalSection}</span>
           </div>
         )}
