@@ -3,9 +3,12 @@
 import { X, ArrowLeft } from "lucide-react"
 import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
 import { useState } from "react"
-import React from "react"
+import React, { useState as useStateHook } from "react"
 import AWBAssignmentModal, { LoadedStatusModal, type AWBAssignmentData } from "./awb-assignment-modal"
 import { useLoadPlanLogs } from "@/lib/load-plan-log-context"
+import { ULDNumberModal } from "./uld-number-modal"
+import { parseULDSection, formatULDSection } from "@/lib/uld-parser"
+import { AWBQuickActionModal } from "./awb-quick-action-modal"
 
 type AWBAssignment = {
   awbNo: string
@@ -31,6 +34,49 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
   const [loadedAWBNo, setLoadedAWBNo] = useState("")
   const [awbAssignments, setAwbAssignments] = useState<Map<string, AWBAssignment>>(new Map())
   const [hoveredUld, setHoveredUld] = useState<string | null>(null)
+  
+  // ULD numbers state management
+  const [uldNumbers, setUldNumbers] = useState<Map<string, string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`uld-numbers-${loadPlan.flight}`)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          return new Map(Object.entries(parsed))
+        } catch (e) {
+          return new Map()
+        }
+      }
+    }
+    return new Map()
+  })
+  const [showULDModal, setShowULDModal] = useState(false)
+  const [selectedULDSection, setSelectedULDSection] = useState<{
+    sectorIndex: number
+    uldSectionIndex: number
+    uld: string
+  } | null>(null)
+  const [showQuickActionModal, setShowQuickActionModal] = useState(false)
+  const [selectedAWBForQuickAction, setSelectedAWBForQuickAction] = useState<{
+    awb: AWBRow
+    sectorIndex: number
+    uldSectionIndex: number
+    awbIndex: number
+  } | null>(null)
+
+  const updateULDNumbers = (sectorIndex: number, uldSectionIndex: number, numbers: string[]) => {
+    const key = `${sectorIndex}-${uldSectionIndex}`
+    setUldNumbers((prev) => {
+      const updated = new Map(prev)
+      updated.set(key, numbers)
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        const toStore = Object.fromEntries(updated)
+        localStorage.setItem(`uld-numbers-${loadPlan.flight}`, JSON.stringify(toStore))
+      }
+      return updated
+    })
+  }
 
   if (!isOpen) return null
 
@@ -50,6 +96,56 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
       setSelectedAWB({ awb, sectorIndex, uldSectionIndex, awbIndex })
       setShowAssignmentModal(true)
     }
+  }
+
+  const handleMarkAWBLoaded = () => {
+    if (!selectedAWBForQuickAction) return
+    
+    const { awb, sectorIndex, uldSectionIndex, awbIndex } = selectedAWBForQuickAction
+    const assignmentKey = `${awb.awbNo}-${sectorIndex}-${uldSectionIndex}-${awbIndex}`
+    
+    setAwbAssignments((prev) => {
+      const updated = new Map(prev)
+      const existing = updated.get(assignmentKey)
+      if (existing) {
+        updated.set(assignmentKey, {
+          ...existing,
+          isLoaded: true,
+        })
+      } else {
+        updated.set(assignmentKey, {
+          awbNo: awb.awbNo,
+          sectorIndex,
+          uldSectionIndex,
+          awbIndex,
+          assignmentData: { type: "single", isLoaded: true },
+          isLoaded: true,
+        })
+      }
+      return updated
+    })
+    
+    const sector = loadPlan.sectors[sectorIndex]
+    addLog(loadPlan.flight, {
+      action: "mark_loaded",
+      awbNo: awb.awbNo,
+      details: "Marked as loaded",
+      sector: sector?.sector || undefined,
+    })
+  }
+
+  const handleMarkAWBOffload = (remainingPieces: string, remarks: string) => {
+    if (!selectedAWBForQuickAction) return
+    
+    const { awb, sectorIndex } = selectedAWBForQuickAction
+    const sector = loadPlan.sectors[sectorIndex]
+    
+    addLog(loadPlan.flight, {
+      action: "offload_awb",
+      awbNo: awb.awbNo,
+      details: `Remaining ${remainingPieces} pieces offloaded. ${remarks || ""}`.trim(),
+      sector: sector?.sector || undefined,
+    })
   }
 
   const handleAssignmentConfirm = (data: AWBAssignmentData) => {
@@ -227,23 +323,22 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
 
                             return (
                               <React.Fragment key={awbIndex}>
-                                {/* AWB Row */}
-                                <div
-                                  className={`flex text-xs border-b border-gray-100 min-w-[800px] ${isLoaded ? "bg-gray-200 opacity-60" : "hover:bg-gray-50"} ${isHovered ? "border-l-4 border-l-red-500" : ""} ${isReadOnly ? "cursor-pointer" : ""}`}
-                                  onClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
+                                {/* AWB Row - Split into left and right sections */}
+                                <AWBSplitRow
+                                  awb={awb}
+                                  awbFields={awbFields}
+                                  isLoaded={isLoaded}
+                                  isHovered={isHovered}
+                                  isReadOnly={isReadOnly}
+                                  assignmentUld={assignmentUld}
+                                  onLeftClick={() => {
+                                    setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
+                                    setShowQuickActionModal(true)
+                                  }}
+                                  onRightClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
                                   onMouseEnter={() => assignmentUld && setHoveredUld(assignmentUld)}
                                   onMouseLeave={() => setHoveredUld(null)}
-                                >
-                                  {awbFields.map((field) => (
-                                    <div
-                                      key={field.key}
-                                      className={`px-2 py-1 flex-shrink-0 ${field.className || ""}`}
-                                      style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}
-                                    >
-                                      {awb[field.key] || "-"}
-                                    </div>
-                                  ))}
-                                </div>
+                                />
                                 
                                 {/* Remarks row */}
                                 {awb.remarks && (
@@ -280,13 +375,56 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           })}
                           
                           {/* ULD Row AFTER all AWBs (matching markdown structure exactly) */}
-                          {uldSection.uld && (
-                            <div className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px]">
-                              <div className="px-2 py-1 flex-1">
-                                {uldSection.uld}
+                          {uldSection.uld && (() => {
+                            const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                            const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
+                            const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                            const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                            
+                            return (
+                              <div 
+                                className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                  setShowULDModal(true)
+                                }}
+                                onTouchStart={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                  setShowULDModal(true)
+                                }}
+                              >
+                                <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
+                                  {hasULDNumbers && (
+                                    <div className="group relative flex-shrink-0">
+                                      <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
+                                        {displayNumbers}
+                                      </div>
+                                      <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20">
+                                        {displayNumbers}
+                                        <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div 
+                                    className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                    onClick={isReadOnly ? () => {
+                                      setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                      setShowULDModal(true)
+                                    } : undefined}
+                                  >
+                                    {uldSection.uld}
+                                  </div>
+                                  {finalSection && (
+                                    <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                      Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )
+                          })()}
                         </React.Fragment>
                       )
                     })}
@@ -302,13 +440,46 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           return (
                             <div key={uldSectionIndex}>
                               {/* ULD Row first in ramp transfer */}
-                              {uldSection.uld && (
-                                <div className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]">
-                                  <div className="px-2 py-1 flex-1 col-span-full">
-                                    {uldSection.uld}
+                              {uldSection.uld && (() => {
+                                const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                                const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
+                                const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                                const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                                
+                                return (
+                                  <div 
+                                    className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]"
+                                  >
+                                    <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
+                                      {hasULDNumbers && (
+                                        <div className="group relative flex-shrink-0">
+                                          <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
+                                            {displayNumbers}
+                                          </div>
+                                          <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20">
+                                            {displayNumbers}
+                                            <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      <div 
+                                        className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                        onClick={isReadOnly ? () => {
+                                          setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                          setShowULDModal(true)
+                                        } : undefined}
+                                      >
+                                        {uldSection.uld}
+                                      </div>
+                                      {finalSection && (
+                                        <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                          Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )
+                              })()}
                               {/* Then AWBs */}
                               {uldSection.awbs.map((awb, awbIndex) => {
                                 const assignmentKey = `${awb.awbNo}-${sectorIndex}-${actualUldSectionIndex}-${awbIndex}`
@@ -509,23 +680,22 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
 
                             return (
                               <React.Fragment key={awbIndex}>
-                                {/* AWB Row */}
-                                <div
-                                  className={`flex text-xs border-b border-gray-100 min-w-[800px] ${isLoaded ? "bg-gray-200 opacity-60" : "hover:bg-gray-50"} ${isHovered ? "border-l-4 border-l-red-500" : ""} ${isReadOnly ? "cursor-pointer" : ""}`}
-                                  onClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
+                                {/* AWB Row - Split into left and right sections */}
+                                <AWBSplitRow
+                                  awb={awb}
+                                  awbFields={awbFields}
+                                  isLoaded={isLoaded}
+                                  isHovered={isHovered}
+                                  isReadOnly={isReadOnly}
+                                  assignmentUld={assignmentUld}
+                                  onLeftClick={() => {
+                                    setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
+                                    setShowQuickActionModal(true)
+                                  }}
+                                  onRightClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
                                   onMouseEnter={() => assignmentUld && setHoveredUld(assignmentUld)}
                                   onMouseLeave={() => setHoveredUld(null)}
-                                >
-                                  {awbFields.map((field) => (
-                                    <div
-                                      key={field.key}
-                                      className={`px-2 py-1 flex-shrink-0 ${field.className || ""}`}
-                                      style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}
-                                    >
-                                      {awb[field.key] || "-"}
-                                    </div>
-                                  ))}
-                                </div>
+                                />
                                 
                                 {/* Remarks row */}
                                 {awb.remarks && (
@@ -562,13 +732,56 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           })}
                           
                           {/* ULD Row AFTER all AWBs (matching markdown structure exactly) */}
-                          {uldSection.uld && (
-                            <div className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px]">
-                              <div className="px-2 py-1 flex-1">
-                                {uldSection.uld}
+                          {uldSection.uld && (() => {
+                            const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                            const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
+                            const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                            const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                            
+                            return (
+                              <div 
+                                className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] cursor-pointer hover:bg-gray-50 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                  setShowULDModal(true)
+                                }}
+                                onTouchStart={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                  setShowULDModal(true)
+                                }}
+                              >
+                                <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
+                                  {hasULDNumbers && (
+                                    <div className="group relative flex-shrink-0">
+                                      <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
+                                        {displayNumbers}
+                                      </div>
+                                      <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20">
+                                        {displayNumbers}
+                                        <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div 
+                                    className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                    onClick={isReadOnly ? () => {
+                                      setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                      setShowULDModal(true)
+                                    } : undefined}
+                                  >
+                                    {uldSection.uld}
+                                  </div>
+                                  {finalSection && (
+                                    <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                      Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )
+                          })()}
                         </React.Fragment>
                       )
                     })}
@@ -584,13 +797,46 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           return (
                             <div key={uldSectionIndex}>
                               {/* ULD Row first in ramp transfer */}
-                              {uldSection.uld && (
-                                <div className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]">
-                                  <div className="px-2 py-1 flex-1 col-span-full">
-                                    {uldSection.uld}
+                              {uldSection.uld && (() => {
+                                const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                                const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
+                                const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                                const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                                
+                                return (
+                                  <div 
+                                    className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]"
+                                  >
+                                    <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
+                                      {hasULDNumbers && (
+                                        <div className="group relative flex-shrink-0">
+                                          <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
+                                            {displayNumbers}
+                                          </div>
+                                          <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20">
+                                            {displayNumbers}
+                                            <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      <div 
+                                        className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                        onClick={isReadOnly ? () => {
+                                          setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
+                                          setShowULDModal(true)
+                                        } : undefined}
+                                      >
+                                        {uldSection.uld}
+                                      </div>
+                                      {finalSection && (
+                                        <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                          Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )
+                              })()}
                               {/* Then AWBs */}
                               {uldSection.awbs.map((awb, awbIndex) => {
                                 const assignmentKey = `${awb.awbNo}-${sectorIndex}-${actualUldSectionIndex}-${awbIndex}`
@@ -696,6 +942,119 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
           setLoadedAWBNo("")
         }}
       />
+
+      {/* ULD Number Modal */}
+      {selectedULDSection && (
+        <ULDNumberModal
+          isOpen={showULDModal}
+          onClose={() => {
+            setShowULDModal(false)
+            setSelectedULDSection(null)
+          }}
+          uldSection={selectedULDSection.uld}
+          sectorIndex={selectedULDSection.sectorIndex}
+          uldSectionIndex={selectedULDSection.uldSectionIndex}
+          initialNumbers={uldNumbers.get(`${selectedULDSection.sectorIndex}-${selectedULDSection.uldSectionIndex}`) || []}
+          onSave={(numbers) => {
+            updateULDNumbers(selectedULDSection.sectorIndex, selectedULDSection.uldSectionIndex, numbers)
+          }}
+        />
+      )}
+
+      {/* AWB Quick Action Modal */}
+      {selectedAWBForQuickAction && (
+        <AWBQuickActionModal
+          isOpen={showQuickActionModal}
+          onClose={() => {
+            setShowQuickActionModal(false)
+            setSelectedAWBForQuickAction(null)
+          }}
+          awb={selectedAWBForQuickAction.awb}
+          onMarkLoaded={handleMarkAWBLoaded}
+          onMarkOffload={handleMarkAWBOffload}
+        />
+      )}
+    </div>
+  )
+}
+
+// AWB Split Row Component
+interface AWBSplitRowProps {
+  awb: AWBRow
+  awbFields: Array<{ key: keyof AWBRow; label: string; className?: string }>
+  isLoaded: boolean
+  isHovered: boolean
+  isReadOnly: boolean
+  assignmentUld: string | null
+  onLeftClick: () => void
+  onRightClick: () => void
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}
+
+function AWBSplitRow({
+  awb,
+  awbFields,
+  isLoaded,
+  isHovered,
+  isReadOnly,
+  assignmentUld,
+  onLeftClick,
+  onRightClick,
+  onMouseEnter,
+  onMouseLeave,
+}: AWBSplitRowProps) {
+  const [hoveredSection, setHoveredSection] = useState<"left" | "right" | null>(null)
+  
+  const leftFields = awbFields.slice(0, 8) // SER through SHC
+  const rightFields = awbFields.slice(8) // MAN.DESC onward
+
+  return (
+    <div
+      className={`flex text-xs border-b border-gray-100 min-w-[800px] ${isLoaded ? "bg-gray-200 opacity-60" : ""} ${isHovered ? "border-l-4 border-l-red-500" : ""}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={() => {
+        onMouseLeave()
+        setHoveredSection(null)
+      }}
+    >
+      {/* Left section - Quick Actions (SER through SHC) - Individual clickable cells like desktop */}
+      {leftFields.map((field) => (
+        <div
+          key={field.key}
+          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "left" && isReadOnly ? "bg-blue-50" : ""}`}
+          style={{ width: field.key === "awbNo" ? "100px" : "60px" }}
+          onMouseEnter={() => isReadOnly && setHoveredSection("left")}
+          onMouseLeave={() => setHoveredSection(null)}
+          onClick={(e) => {
+            if (isReadOnly && onLeftClick) {
+              e.stopPropagation()
+              onLeftClick()
+            }
+          }}
+        >
+          {awb[field.key] || "-"}
+        </div>
+      ))}
+      
+      {/* Right section - AWB Assignment (MAN.DESC onward) - Individual clickable cells like desktop */}
+      {rightFields.map((field) => (
+        <div
+          key={field.key}
+          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "right" && isReadOnly ? "bg-gray-50" : ""}`}
+          style={{ width: field.key === "manDesc" ? "120px" : "60px" }}
+          onMouseEnter={() => isReadOnly && setHoveredSection("right")}
+          onMouseLeave={() => setHoveredSection(null)}
+          onClick={(e) => {
+            if (isReadOnly && onRightClick) {
+              e.stopPropagation()
+              onRightClick()
+            }
+          }}
+        >
+          {awb[field.key] || "-"}
+        </div>
+      ))}
     </div>
   )
 }
