@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Plane, Clock, MapPin, Package, Calendar, RefreshCw } from "lucide-react"
 import { parseLoadPlanFromText } from "@/lib/load-plan-parser"
 import type { LoadPlanDetail } from "./load-plan-types"
-import MobileLoadPlanModal from "./mobile-load-plan-modal"
+import MobileLoadPlanDetailScreen from "./mobile-load-plan-detail-screen"
 import LoadPlanLogsScreen from "./load-plan-logs-screen"
 import BottomNav from "./bottom-nav"
 import MenuDrawer from "./menu-drawer"
@@ -188,14 +188,12 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
 
   if (currentView === "detail" && selectedLoadPlan) {
     return (
-      <MobileLoadPlanModal
+      <MobileLoadPlanDetailScreen
         loadPlan={selectedLoadPlan}
-        isOpen={true}
-        onClose={() => {
+        onBack={() => {
           setCurrentView("list")
           setSelectedLoadPlan(null)
         }}
-        isFullScreen={true}
       />
     )
   }
