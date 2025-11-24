@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Loader2, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 
 interface LoadPlanScreenProps {
   onBack: () => void
@@ -134,6 +134,11 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
 
       console.log('Fetching load plans from Supabase...')
       
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        throw new Error('Supabase client tidak tersedia. Pastikan environment variables sudah diatur.')
+      }
+      
       // Try with explicit schema name
       const { data: loadPlanData, error: fetchError } = await supabase
         .schema('public')
@@ -218,6 +223,11 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
     try {
       setLoadingItems(prev => new Set(prev).add(loadPlanId))
 
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        throw new Error('Supabase client tidak tersedia. Pastikan environment variables sudah diatur.')
+      }
+      
       const { data: items, error: fetchError } = await supabase
         .schema('public')
         .from('load_plan_items')

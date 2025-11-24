@@ -31,13 +31,57 @@ export function parseLoadPlanFromText(content: string, flightNumber: string): Lo
   const preparedOnMatch = content.match(/PREPARED ON:\s*([^\n]+)/i)
   const preparedOn = preparedOnMatch ? preparedOnMatch[1].trim() : ""
 
-  // Extract remarks (lines that start with XX or quotes)
+  // Extract remarks (special instructions like "XX NO PART SHIPMENT XX" or quoted text)
+  // Exclude ULD allocations (XX 02PMC XX, XX BULK XX, etc.)
   const remarks: string[] = []
-  const remarkMatches = content.matchAll(/(?:XX\s+[^X]+XX|"[^"]+")/gi)
-  for (const match of remarkMatches) {
-    const remark = match[0].trim()
-    if (remark && !remark.includes("SER.") && !remark.includes("AWB NO")) {
-      remarks.push(remark)
+  
+  // Find the first sector to get remarks before it
+  const firstSectorMatch = content.match(/SECTOR:\s*([A-Z]{6})/i)
+  if (firstSectorMatch && firstSectorMatch.index !== undefined) {
+    const sectorStartIndex = firstSectorMatch.index
+    const sectorStartContent = content.substring(0, sectorStartIndex)
+    const lines = sectorStartContent.split("\n")
+    
+    for (const line of lines) {
+      const trimmed = line.trim()
+      
+      // Skip empty lines, headers
+      if (!trimmed || trimmed.includes("SER.") || trimmed.includes("AWB NO") || trimmed.includes("EMIRATES LOAD PLAN") || trimmed.match(/^EK\d{4}/)) {
+        continue
+      }
+      
+      // Check for special instruction remarks (XX ... XX that are NOT ULD allocations)
+      const xxMatch = trimmed.match(/XX\s+([^X]+?)\s+XX/i)
+      if (xxMatch) {
+        const innerContent = xxMatch[1].trim()
+        // Exclude ULD patterns - check if it contains ULD type codes
+        const isULDAllocation = /\b(\d+\s*(PMC|AKE|AKL|AMF|ALF|PLA)|BULK|(PMC|AKE|AKL|AMF|ALF|PLA)\s*\d+)\b/i.test(innerContent) ||
+                                /^\d+\s*(PMC|AKE|AKL|AMF|ALF|PLA)/i.test(innerContent) ||
+                                /^(PMC|AKE|AKL|AMF|ALF|PLA)\s*\d+/i.test(innerContent) ||
+                                /^BULK$/i.test(innerContent)
+        
+        if (!isULDAllocation) {
+          // This is a special instruction remark, not a ULD allocation
+          remarks.push(trimmed)
+        }
+      }
+      
+      // Check for quoted remarks (with smart quotes or regular quotes)
+      const quotedMatch = trimmed.match(/[""]([^""]+)[""]/)
+      if (quotedMatch) {
+        remarks.push(quotedMatch[1].trim())
+      }
+      
+      // Check for instruction lines that start with quotes or contain instruction keywords
+      if (trimmed.match(/^[""]/) || /\b(requirement|ensure|do not|please|must|should|station)\b/i.test(trimmed)) {
+        // Make sure it's not a ULD line or other data
+        if (!trimmed.match(/XX\s+\d+.*XX/i) && !trimmed.match(/^\d{3}\s+\d{3}-\d{8}/) && trimmed.length > 10) {
+          const cleaned = trimmed.replace(/^[""]+|[""]+$/g, "").trim()
+          if (cleaned && !remarks.includes(cleaned)) {
+            remarks.push(cleaned)
+          }
+        }
+      }
     }
   }
 
