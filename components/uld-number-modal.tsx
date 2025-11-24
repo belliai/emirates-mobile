@@ -116,9 +116,9 @@ export function ULDNumberModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/20" onClick={onClose}>
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/20 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-auto min-w-[500px] max-w-[800px]"
+        className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 w-auto min-w-[400px] max-w-[500px] max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
@@ -136,15 +136,15 @@ export function ULDNumberModal({
           Section: <span className="font-mono font-semibold">{uldSection}</span>
         </div>
 
-        <div className="space-y-2 mb-4 max-h-[300px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="space-y-2 mb-4 max-h-[50vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           {uldNumbers.length === 0 ? (
             <div className="text-xs text-gray-500 text-center py-4">No ULDs yet. Click "Add ULD" to add one.</div>
           ) : (
             uldNumbers.map((number, index) => {
               const type = currentTypes[index] || types[0] || "PMC"
               return (
-                <div key={index} className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <label className="text-xs font-medium text-gray-700 whitespace-nowrap min-w-[80px]">
+                <div key={index} className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                  <label className="text-xs font-medium text-gray-700 whitespace-nowrap min-w-[60px] sm:min-w-[80px]">
                     ULD {index + 1}:
                   </label>
                   <select
@@ -154,7 +154,7 @@ export function ULDNumberModal({
                       handleTypeChange(index, e.target.value)
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-gray-400 min-w-[100px]"
+                    className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-gray-400 min-w-[80px] sm:min-w-[100px] flex-shrink-0"
                   >
                     {availableTypes.map((t) => (
                       <option key={t} value={t}>
@@ -171,7 +171,7 @@ export function ULDNumberModal({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     onFocus={(e) => e.stopPropagation()}
-                    className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-gray-400"
+                    className="flex-1 min-w-[120px] px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-gray-400"
                     placeholder={`Enter ULD number`}
                     autoFocus={index === 0 && uldNumbers.every(n => !n)}
                   />
@@ -181,7 +181,7 @@ export function ULDNumberModal({
                       e.stopPropagation()
                       handleRemoveItem(index)
                     }}
-                    className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600 transition-colors"
+                    className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-600 transition-colors flex-shrink-0"
                     title="Remove this ULD"
                     aria-label="Remove ULD"
                   >
@@ -208,14 +208,14 @@ export function ULDNumberModal({
           </button>
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col sm:flex-row justify-end gap-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
               onClose()
             }}
-            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="w-full sm:w-auto px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
           >
             Cancel
           </button>
@@ -225,7 +225,7 @@ export function ULDNumberModal({
               e.stopPropagation()
               handleSave()
             }}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-[#D71A21] hover:bg-[#B0151A] rounded-md transition-colors"
+            className="w-full sm:w-auto px-3 py-1.5 text-xs font-medium text-white bg-[#D71A21] hover:bg-[#B0151A] rounded-md transition-colors"
           >
             Save
           </button>

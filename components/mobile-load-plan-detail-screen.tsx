@@ -502,37 +502,81 @@ interface ULDRowProps {
 }
 
 function ULDRow({ uld, uldNumbers, isReadOnly, onClick, isRampTransfer }: ULDRowProps) {
+  const [showTooltip, setShowTooltip] = useState(false)
   const hasULDNumbers = uldNumbers.length > 0 && uldNumbers.some(n => n.trim() !== "")
-  const displayNumbers = uldNumbers.filter(n => n.trim() !== "").join(", ")
+  const filteredNumbers = uldNumbers.filter(n => n.trim() !== "")
+  const allNumbers = filteredNumbers.join(", ")
   const finalSection = hasULDNumbers ? formatULDSection(uldNumbers, uld) : null
   
+  // Truncate to show max 2 ULD numbers, add ".." if more exist
+  const shouldTruncate = filteredNumbers.length > 2
+  const displayNumbers = shouldTruncate 
+    ? filteredNumbers.slice(0, 2).join(", ") + ".."
+    : allNumbers
+  
   return (
-    <div className={`flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] ${isRampTransfer ? "bg-gray-50" : ""}`}>
-      <div className="flex items-center flex-1 px-2 py-1">
-        {/* Left: ULD Numbers (if exist) */}
-        {hasULDNumbers && (
-          <div className="group relative flex-shrink-0 mr-2">
-            <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
-              {displayNumbers}
-            </div>
-            <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20">
-              {displayNumbers}
-              <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
-            </div>
-          </div>
-        )}
-        {/* Center: ULD Section (grows to fill space, but allows Final to stay right) */}
+    <div className={`flex text-xs font-semibold text-gray-900 border-b border-gray-200 ${isRampTransfer ? "bg-gray-50" : ""}`}>
+      <div className="flex items-center gap-2 px-2 py-1 w-full">
+        {/* Left: ULD Section */}
         <div 
-          className={`flex-1 text-center min-w-0 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+          className={`flex-shrink-0 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
           onClick={isReadOnly ? onClick : undefined}
         >
           {uld}
         </div>
-        {/* Right: Final Section (always on the right edge, ml-auto pushes it to the right) */}
-        {finalSection && (
-          <div className="text-xs font-normal text-gray-600 flex-shrink-0 ml-auto pl-3 border-l border-gray-200 whitespace-nowrap">
-            Final: <span className="font-mono font-semibold">{finalSection}</span>
+        {/* Middle: Separator */}
+        {(hasULDNumbers || finalSection) && (
+          <span className="text-gray-400">|</span>
+        )}
+        {/* Middle: ULD Numbers */}
+        {hasULDNumbers && (
+          <div 
+            className="group relative flex-shrink-0"
+            onTouchStart={(e) => {
+              if (shouldTruncate) {
+                e.stopPropagation()
+                setShowTooltip(true)
+                // Hide tooltip after 3 seconds
+                setTimeout(() => setShowTooltip(false), 3000)
+              }
+            }}
+            onClick={(e) => {
+              if (shouldTruncate) {
+                e.stopPropagation()
+                setShowTooltip(!showTooltip)
+              }
+            }}
+          >
+            <div 
+              className={`text-xs font-normal text-gray-500 ${shouldTruncate ? "cursor-pointer" : ""}`}
+              title={shouldTruncate ? allNumbers : undefined}
+            >
+              {displayNumbers}
+            </div>
+            {/* Mobile tooltip - shows on tap */}
+            {shouldTruncate && showTooltip && (
+              <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg whitespace-nowrap z-20 md:hidden">
+                {allNumbers}
+                <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+              </div>
+            )}
+            {/* Desktop hover tooltip */}
+            {shouldTruncate && (
+              <div className="absolute left-0 bottom-full mb-1.5 px-2 py-1 bg-gray-800/95 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-20 hidden md:block">
+                {allNumbers}
+                <div className="absolute top-full left-3 w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-800/95"></div>
+              </div>
+            )}
           </div>
+        )}
+        {/* Right: Final Section */}
+        {finalSection && (
+          <>
+            <span className="text-gray-400">|</span>
+            <div className="text-xs font-normal text-gray-600 flex-shrink-0">
+              Final: <span className="font-mono font-semibold">{finalSection}</span>
+            </div>
+          </>
         )}
       </div>
     </div>
