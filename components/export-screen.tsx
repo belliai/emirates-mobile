@@ -53,11 +53,11 @@ interface LoadPlanItem {
 const STORAGE_KEY_LOAD_PLANS = 'emirates_export_load_plans'
 const STORAGE_KEY_LOAD_PLAN_ITEMS = 'emirates_export_load_plan_items'
 const STORAGE_KEY_LAST_FETCH = 'emirates_export_load_plans_last_fetch'
-const CACHE_DURATION = 5 * 60 * 1000 // 5 menit dalam milliseconds
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
 
-// Fungsi untuk mengkonversi data Supabase ke format LoadPlanDetail
+// Function to convert Supabase data to LoadPlanDetail format
 function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPlanDetail {
-  // Format date dari flight_date (YYYY-MM-DD) ke format seperti "01Mar"
+  // Format date from flight_date (YYYY-MM-DD) to format like "01Mar"
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString)
@@ -69,13 +69,13 @@ function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPla
     }
   }
 
-  // Format time dari std_time (HH:MM:SS) ke format HH:MM
+  // Format time from std_time (HH:MM:SS) to HH:MM format
   const formatTime = (timeString: string | null): string => {
     if (!timeString) return ""
     return timeString.substring(0, 5)
   }
 
-  // Format prepared_on timestamp ke format yang diharapkan
+  // Format prepared_on timestamp to expected format
   const formatPreparedOn = (timestamp: string | null): string => {
     if (!timestamp) return ""
     try {
@@ -92,27 +92,27 @@ function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPla
     }
   }
 
-  // Buat PAX string dari route
+  // Create PAX string from route
   const pax = plan.route_full || 
     (plan.route_origin && plan.route_destination 
       ? `${plan.route_origin}/${plan.route_destination}` 
       : "")
 
-  // Kelompokkan items berdasarkan sector dan ULD allocation
-  // Sector biasanya dari plan.sector, atau bisa dikelompokkan berdasarkan destination
+  // Group items by sector and ULD allocation
+  // Sector is usually from plan.sector, or can be grouped by destination
   const sectorsMap = new Map<string, Map<string, AWBRow[]>>()
   
   items.forEach((item) => {
-    // Gunakan plan.sector jika tersedia, atau ambil dari destination (3 karakter terakhir dari origin_destination)
+    // Use plan.sector if available, or get from destination (last 3 characters of origin_destination)
     let sector = plan.sector || "UNKNOWN"
     if (!sector || sector === "UNKNOWN") {
       if (item.origin_destination && item.origin_destination.length >= 6) {
-        // Ambil destination (3 karakter terakhir)
+        // Get destination (last 3 characters)
         sector = item.origin_destination.substring(3, 6)
       }
     }
     
-    // Jika masih belum ada, coba buat dari route
+    // If still not available, try to create from route
     if (!sector || sector === "UNKNOWN") {
       if (plan.route_destination) {
         sector = plan.route_destination
@@ -169,7 +169,7 @@ function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPla
     uldMap.get(uld)!.push(awb)
   })
 
-  // Konversi Map ke array Sector
+  // Convert Map to Sector array
   const sectors: Sector[] = Array.from(sectorsMap.entries()).map(([sectorName, uldMap]) => {
     const allAWBs: AWBRow[] = []
     const uldSections: ULDSection[] = Array.from(uldMap.entries()).map(([uld, awbs]) => {
@@ -181,7 +181,7 @@ function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPla
       }
     })
 
-    // Hitung totals dari semua AWBs di sector ini
+    // Calculate totals from all AWBs in this sector
     const totals = {
       pcs: allAWBs.reduce((sum, awb) => sum + parseInt(awb.pcs) || 0, 0).toString(),
       wgt: allAWBs.reduce((sum, awb) => sum + parseFloat(awb.wgt) || 0, 0).toFixed(2),
@@ -294,11 +294,10 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
       
       const supabase = getSupabaseClient()
       if (!supabase) {
-        throw new Error('Supabase client tidak tersedia. Pastikan environment variables sudah diatur.')
+        throw new Error('Supabase client is not available. Make sure environment variables are set.')
       }
       
       const { data: loadPlanData, error: fetchError } = await supabase
-        .schema('public')
         .from('load_plans')
         .select('*')
         .order('flight_date', { ascending: false })
@@ -319,33 +318,32 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
             fetchError.message?.includes('schema cache')) {
           if (loadPlans.length > 0) {
             console.log('Using cached data due to error')
-            setError(`Tidak dapat memuat data terbaru. Menampilkan data dari cache.\n\nError: ${fetchError.message}`)
+            setError(`Unable to load latest data. Displaying data from cache.\n\nError: ${fetchError.message}`)
             setLoading(false)
             setIsRefreshing(false)
             return
           }
           
           throw new Error(
-            `Tabel load_plans tidak ditemukan.\n\n` +
+            `Table load_plans not found.\n\n` +
             `Error: ${fetchError.message}\n` +
             `Code: ${fetchError.code}\n\n` +
-            `Pastikan:\n` +
-            `1. Tabel load_plans sudah dibuat di schema public\n` +
-            `2. Nama tabel benar: load_plans (dengan 's' di akhir)\n` +
-            `3. Refresh schema cache di Supabase Dashboard > Settings > API\n` +
-            `4. Restart dev server setelah membuat tabel`
+            `Please ensure:\n` +
+            `1. Table load_plans has been created in public schema\n` +
+            `2. Table name is correct: load_plans (with 's' at the end)\n` +
+            `3. Refresh schema cache in Supabase Dashboard > Settings > API\n` +
+            `4. Restart dev server after creating the table`
           )
         }
         throw fetchError
       }
 
-      const plans = loadPlanData || []
+      const plans = (loadPlanData || []) as LoadPlan[]
       
-      // Fetch items untuk semua load plans
+      // Fetch items for all load plans
       const itemsMap: Record<string, LoadPlanItem[]> = {}
       for (const plan of plans) {
         const { data: items, error: itemsError } = await supabase
-          .schema('public')
           .from('load_plan_items')
           .select('*')
           .eq('load_plan_id', plan.id)
@@ -354,13 +352,13 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
         if (itemsError) {
           console.error(`Error fetching items for plan ${plan.id}:`, itemsError)
         } else {
-          itemsMap[plan.id] = items || []
+          itemsMap[plan.id] = (items || []) as LoadPlanItem[]
         }
       }
 
       setLoadPlanItems(itemsMap)
       
-      // Konversi ke LoadPlanDetail format
+      // Convert to LoadPlanDetail format
       const convertedPlans: LoadPlanDetail[] = plans.map(plan => 
         convertToLoadPlanDetail(plan, itemsMap[plan.id] || [])
       )
@@ -372,13 +370,13 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
       
       if (loadPlans.length > 0) {
         console.log('Using cached data due to error')
-        setError(`Tidak dapat memuat data terbaru. Menampilkan data dari cache.\n\nError: ${err.message}`)
+        setError(`Unable to load latest data. Displaying data from cache.\n\nError: ${err.message}`)
         setLoading(false)
         setIsRefreshing(false)
         return
       }
       
-      const errorMessage = err.message || 'Gagal memuat data dari Supabase'
+      const errorMessage = err.message || 'Failed to load data from Supabase'
       setError(errorMessage)
       setLoadPlans([])
     } finally {
@@ -387,7 +385,7 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
     }
   }
 
-  // Load data dari localStorage saat component mount
+  // Load data from localStorage when component mounts
   useEffect(() => {
     const loadInitialData = () => {
       try {
@@ -401,7 +399,7 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
           
           setLoadPlanItems(items)
           
-          // Konversi cached plans ke LoadPlanDetail
+          // Convert cached plans to LoadPlanDetail
           const convertedPlans: LoadPlanDetail[] = plans.map(plan => 
             convertToLoadPlanDetail(plan, items[plan.id] || [])
           )
@@ -409,10 +407,10 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
           setLoading(false)
           
           if (shouldRefreshCache()) {
-            fetchLoadPlanData(false) // Refresh di background
+            fetchLoadPlanData(false) // Refresh in background
           }
         } else {
-          // Tidak ada cache, fetch langsung
+          // No cache, fetch directly
           fetchLoadPlanData(false)
         }
       } catch (err) {
@@ -556,7 +554,7 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
               }}
               className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
             >
-              Coba lagi
+              Try again
             </button>
           </div>
         )}
@@ -567,10 +565,10 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                <span className="ml-2 text-sm text-gray-500">Memuat data...</span>
+                <span className="ml-2 text-sm text-gray-500">Loading data...</span>
               </div>
             ) : loadPlans.length === 0 ? (
-              <div className="px-1.5 py-3 text-center text-gray-500 text-sm">Tidak ada data load plan</div>
+              <div className="px-1.5 py-3 text-center text-gray-500 text-sm">No load plan data available</div>
             ) : (
               loadPlans.map((loadPlan, index) => (
                 <LoadPlanRow key={index} loadPlan={loadPlan} onClick={() => handleRowClick(loadPlan)} totalAWBs={getTotalAWBs(loadPlan)} />
