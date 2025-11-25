@@ -1,92 +1,216 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plane, Clock, MapPin, Package, Calendar, RefreshCw } from "lucide-react"
-import { parseLoadPlanFromText } from "@/lib/load-plan-parser"
-import type { LoadPlanDetail } from "./load-plan-types"
+import { Plane, Clock, MapPin, Package, Calendar, RefreshCw, Loader2 } from "lucide-react"
+import { getSupabaseClient } from "@/lib/supabase"
+import type { LoadPlanDetail, Sector, ULDSection, AWBRow } from "./load-plan-types"
 import MobileLoadPlanDetailScreen from "./mobile-load-plan-detail-screen"
 import LoadPlanLogsScreen from "./load-plan-logs-screen"
 import BottomNav from "./bottom-nav"
 import MenuDrawer from "./menu-drawer"
 
-// Load plans markdown content
-const LOAD_PLANS_CONTENT = `EMIRATES LOAD PLAN                                                              
-EK0544  / 01Mar  ACFT TYPE: 77WER   ACFT REG: A6-ENT      HEADER VERSION: 1     
-PAX: DXB/MAA/0/23/251              STD: 02:50                   PREPARED BY: PRINCE
-TTL PLN ULD: 06PMC/07AKE           ULD VERSION: 06/26    PREPARED ON: 29-Feb-24 12:44:05            
-SECTOR: DXBMAA                                                                  
-SER.  AWB NO     ORG/DES  PCS   WGT     VOL  LVOL     SHC      MAN.DESC     PCODE PC THC  BS PI FLTIN ARRDT.TIME QNN/AQNN    WHS SI
-001 176-92065120 FRAMAA    31  1640.2  18.9  20.0 PIL-CRT-EAP CONSOLIDATION A AXD P2      SS N EK9903 29Feb0418 13:40/22:31      N 
-XX 02PMC XX                                                                                                                                           
-002 176-98208961 DXBMAA     1    10.0   0.1   0.1 VAL         GOLD JEWELLERY. VAL P2 NORM NN N                                   N 
-XX BULK XX                                                                                                                                            
-003 176-93627586 MNLMAA    13  2690.0  18.5  18.5 HEA-CGO     CONSOLIDATION   GCR P1      SS N EK0333 27Feb2334 51:16/           N 
-XX 02PMC XX                                                                                                                                           
-004 176-99699530 PEKMAA     9   643.0   1.3   1.3 VUN         CONSOLIDATION   GCR P2      SS N EK9307 29Feb0216 19:20/24:33      N 
-005 176-95418503 MXPMAA     3   356.0   2.8   2.8 SPX         CONSOLIDATION   GCR P2      SS N EK9918 29Feb0315 19:20/23:35      N 
-006 176-92921581 MXPMAA     1   227.0   0.3   0.3 HEA-SPX     CONSOLIDATION   GCR P2      SS N EK9918 29Feb0315 19:20/23:35      N 
-007 176-92082874 FRAMAA    15   242.5   1.9   1.9 EAP-SPX     CONSOLIDATION A GCR P1      SS N EK9903 29Feb0418 13:30/22:31      N 
-008 176-93270542 FRAMAA    11   145.5   0.9   0.9 EAP         CONSOLIDATION A GCR P1      SS N EK9903 29Feb0418 13:30/22:31      N 
-XX 06AKE XX                                                                                                                                           
-***** RAMP TRANSFER *****
-009 176-92388321 MIAMAA    57  1499.0   8.6   8.6 PES-CRT     SHRIMP          PXS P2 QRT  SS N EK0214 29Feb1915 07:25/           N 
-010 176-92388332 MIAMAA    57  1499.0   8.6   8.6 PES-CRT     LIVE SHRIMP     PXS    QRT  SS N EK0214 29Feb1915 07:25/           N 
-XX 02PMC XX                                                                                                                                           
-011 176-91628773 DARMAA     1    20.0   0.1   0.1 VAL         GOLD            VAL P2 QRT  SS N EK0726 29Feb2145 05:05/           N 
-012 176-91629020 DARMAA     1    20.0   0.1   0.1 VAL         GOLD            VAL P2 QRT  SS N EK0726 29Feb2145 05:05/           N 
-XX BULK XX                                                                                                                                            
-013 176-91073931 KRKMAA     1   363.0   0.6   4.0 SPX-EAP-HEA CONSOLIDATION A AXA P1 QRT  SS N EK0180 29Feb2220 04:30/           N 
-XX 01AKE XX                                                                                                                                           
-BAGG 10AKE 
-COU BULK DHL 300KGS                                                                                                                                                                                                                                                                                                                                                                                
-        TOTALS : 201     9,355.20     62.69     67.23  
-EMIRATES LOAD PLAN                                                              
-EK0205  / 12Oct  ACFT TYPE: 388R    ACFT REG: A6-EOW      HEADER VERSION: 1     
-PAX: DXB/MXP                       STD: 09:35               PREPARED BY: S294162
-TTL PLN ULD: 05PMC/10AKE           ULD VERSION: 05PMC/26 PREPARED ON: 15-Oct-25 11:29:32            
-SECTOR: DXBMXP                                                                  
-SER.  AWB NO     ORG/DES  PCS   WGT     VOL  LVOL     SHC      MAN.DESC     PCODE PC THC  BS PI FLTIN ARRDT.TIME QNN/AQNN    WHS SI
-001 176-20257333 DXBMXP     6    36.3   0.1   0.1 VAL         CONSOLIDATION   VAL P2 NORM SS N                                   N 
-002 176-16505274 BOMJFK     3  1450.0   9.1   9.1 HEA-CRT-EMD CONSOLIDATED AS AXD P2      SS Y EK0509 12Oct0024 13:29/           N 
-xx 01PMC xx                                                                                                                                           
-003 176-13820240 DXBJFK     1   242.0   0.8   0.8 HEA-SVC-CRT CATERING GOOD   SVC P2 NORM SS N                                   N 
-XX  01AKE  XX                                                                                                                                         
-004 176-12968620 DACJFK    13   296.4   1.7   1.7             CONSOLIDATION   GCR P2      SS Y EK0585 11Oct0439 29:28/           N 
-005 176-15033524 HKGMXP   105  2030.0  12.0  12.0 SPX-SBU     WOMEN S COTTON  GCR P2      SS N EK9789 11Oct1055 17:11/23:11      N 
-XX 01PMC 01AKE XX                                                                                                                                     
-006 176-10603445 BNEMXP     2    19.4   0.2   0.2 MAL         INTL. MAIL      MAW         SS N EK0435 11Oct0533 28:34/           N 
-007 176-10603456 BNEMXP     3    29.9   0.3   0.5 MAL         INTL. MAIL      MAW P2      SS N EK0435 11Oct0533 28:34/           N 
-008 176-10609454 MELMXP     1     3.0   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0407 11Oct0514 28:53/           N 
-009 176-10609465 MELMXP    10    90.9   0.8   1.0 MAL         INTL. MAIL      MAW P2      SS N EK0407 11Oct0514 28:53/           N 
-010 176-10609476 MELMXP     5    49.1   0.4   0.7 MAL         INTL. MAIL      MAW P2      SS N EK0407 11Oct0514 28:53/           N 
-011 176-07700206 PERMXP     1     0.4   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0421 11Oct0504 29:03/           N 
-012 176-07700210 PERMXP     1     1.8   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0421 11Oct0504 29:03/           N 
-013 176-07700221 PERMXP     3     5.2   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0421 11Oct0504 29:03/           N 
-014 176-07700232 PERMXP     1    12.0   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0421 11Oct0504 29:03/           N 
-015 176-07700243 PERMXP     1     0.2   0.1   0.1 MAL         INTL. MAIL      MAW P2      SS N EK0421 11Oct0504 29:03/           N 
-016 176-16255713 IKAMXP     3    20.8   0.2   0.2 MAL         INTL. MAIL      MAW         SS N EK0972 11Oct1327 20:39/           N 
-017 176-18596454 SYDMXP     5    42.3   0.4   0.7 MAL         INTL. MAIL      MAW P2 QWT  SS N EK0415 11Oct1306 21:00/           N 
-018 176-18596465 SYDMXP     1    14.0   0.1   0.1 MAL         INTL. MAIL      MAW P2 QWT  SS N EK0415 11Oct1306 21:00/           N 
-019 176-18596476 SYDMXP     1    14.2   0.1   0.1 MAL         INTL. MAIL      MAW P2 QWT  SS N EK0415 11Oct1306 21:00/           N 
-XX 01AKE XX                                                                                                                                           
-        TOTALS : 166     4,357.90     26.17     27.28                           
-SECTOR: DXBJFK                                                                  
-SER.  AWB NO     ORG/DES  PCS   WGT     VOL  LVOL     SHC      MAN.DESC     PCODE PC THC  BS PI FLTIN ARRDT.TIME QNN/AQNN    WHS SI
-001 176-13926511 CMBJFK     1    14.0   0.1   0.1 CGO         CONSOLIDATION   GCR P1      SS N EK0651 11Oct1311 20:56/           N 
-XX   BULK XX                                                                                                                                          
-002 176-98261704 DXBJFK     5  2941.0   7.7   7.7 HEA-RMD-EAW CONSOLIDATION   GCR P2 NORM SS Y                                   N 
-003 176-19890323 DWCJFK     2    16.5   0.1   0.1 SEA-ECC     CONSOLIDATION A SEA P2      SS N EK7524 09Oct2251 59:16/           N 
-004 176-12620576 CMBJFK    10   146.5   0.6   0.6 ECC         CONSOLIDATION   GC R P2      SS N EK0651 10Oct1259 45:08/           N 
-005 176-10878556 TUNJFK     4   487.0   3.2   3.2 HEA-ECC     CONSOLIDATION   GCR P2      SS N EK0748 10Oct2243 35:23/           N 
-006 176-15838513 SINJFK     4   544.0   4.1   4.1             CONSOLIDATION   GCR P1      SS N EK0353 11Oct0359 30:08/           N 
-007 176-16890241 HYDPHL     1   148.0   1.0   1.0 ECC-TSE     CONSOLIDATION   GCR P1      SS N EK0527 11Oct1212 21:55/           N 
-008 176-19897102 KTIJFK    60 140.979   1.3   1.3             CONSOLIDATION   GCR P2      SS Y EK0349 11Oct0500 29:07/           N 
-XX  02PMC 02AKE XX                                                                                                                                    
-009 176-04616581 LHEJFK    45  1320.0   7.9   7.9 COU-XPS-FCE COURIER ON AWB  COU P2 QWT  SS N EK0623 12Oct0605 04:02/           N 
-XX 01PMC XX                                                                                                                                           
-MXP   13AKE    
-JFK   02AKE   
-        TOTALS : 132     5,757.98     25.90     25.90`
+interface LoadPlan {
+  id: string
+  flight_number: string
+  flight_date: string
+  aircraft_type: string | null
+  aircraft_registration: string | null
+  route_origin: string | null
+  route_destination: string | null
+  route_full: string | null
+  std_time: string | null
+  prepared_by: string | null
+  total_planned_uld: string | null
+  uld_version: string | null
+  prepared_on: string | null
+  sector: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface LoadPlanItem {
+  id: string
+  load_plan_id: string
+  serial_number: number | null
+  awb_number: string | null
+  origin_destination: string | null
+  pieces: number | null
+  weight: number | null
+  volume: number | null
+  load_volume: number | null
+  special_handling_code: string | null
+  uld_allocation: string | null
+  manual_description: string | null
+  product_code_pc: string | null
+  booking_status: string | null
+  priority_indicator: string | null
+  flight_in: string | null
+  arrival_date_time: string | null
+  special_instructions: string | null
+  [key: string]: any
+}
+
+const STORAGE_KEY_LOAD_PLANS = 'emirates_export_load_plans'
+const STORAGE_KEY_LOAD_PLAN_ITEMS = 'emirates_export_load_plan_items'
+const STORAGE_KEY_LAST_FETCH = 'emirates_export_load_plans_last_fetch'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 menit dalam milliseconds
+
+// Fungsi untuk mengkonversi data Supabase ke format LoadPlanDetail
+function convertToLoadPlanDetail(plan: LoadPlan, items: LoadPlanItem[]): LoadPlanDetail {
+  // Format date dari flight_date (YYYY-MM-DD) ke format seperti "01Mar"
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = date.toLocaleDateString('en-US', { month: 'short' })
+      return `${day}${month}`
+    } catch {
+      return dateString
+    }
+  }
+
+  // Format time dari std_time (HH:MM:SS) ke format HH:MM
+  const formatTime = (timeString: string | null): string => {
+    if (!timeString) return ""
+    return timeString.substring(0, 5)
+  }
+
+  // Format prepared_on timestamp ke format yang diharapkan
+  const formatPreparedOn = (timestamp: string | null): string => {
+    if (!timestamp) return ""
+    try {
+      const date = new Date(timestamp)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = date.toLocaleDateString('en-US', { month: 'short' })
+      const year = date.getFullYear()
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      const seconds = date.getSeconds().toString().padStart(2, '0')
+      return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`
+    } catch {
+      return timestamp
+    }
+  }
+
+  // Buat PAX string dari route
+  const pax = plan.route_full || 
+    (plan.route_origin && plan.route_destination 
+      ? `${plan.route_origin}/${plan.route_destination}` 
+      : "")
+
+  // Kelompokkan items berdasarkan sector dan ULD allocation
+  // Sector biasanya dari plan.sector, atau bisa dikelompokkan berdasarkan destination
+  const sectorsMap = new Map<string, Map<string, AWBRow[]>>()
+  
+  items.forEach((item) => {
+    // Gunakan plan.sector jika tersedia, atau ambil dari destination (3 karakter terakhir dari origin_destination)
+    let sector = plan.sector || "UNKNOWN"
+    if (!sector || sector === "UNKNOWN") {
+      if (item.origin_destination && item.origin_destination.length >= 6) {
+        // Ambil destination (3 karakter terakhir)
+        sector = item.origin_destination.substring(3, 6)
+      }
+    }
+    
+    // Jika masih belum ada, coba buat dari route
+    if (!sector || sector === "UNKNOWN") {
+      if (plan.route_destination) {
+        sector = plan.route_destination
+      } else if (plan.route_full) {
+        const parts = plan.route_full.split('-')
+        if (parts.length >= 2) {
+          sector = parts[1]
+        }
+      }
+    }
+    
+    const uld = item.uld_allocation || "XX BULK XX"
+    
+    if (!sectorsMap.has(sector)) {
+      sectorsMap.set(sector, new Map())
+    }
+    
+    const uldMap = sectorsMap.get(sector)!
+    if (!uldMap.has(uld)) {
+      uldMap.set(uld, [])
+    }
+    
+    const awb: AWBRow = {
+      ser: item.serial_number?.toString().padStart(3, '0') || "000",
+      awbNo: item.awb_number || "",
+      orgDes: item.origin_destination || "",
+      pcs: item.pieces?.toString() || "0",
+      wgt: item.weight?.toString() || "0",
+      vol: item.volume?.toString() || "0",
+      lvol: item.load_volume?.toString() || item.volume?.toString() || "0",
+      shc: item.special_handling_code || "",
+      manDesc: item.manual_description || "",
+      pcode: item.product_code_pc || "",
+      pc: "",
+      thc: "",
+      bs: item.booking_status || "SS",
+      pi: item.priority_indicator || "N",
+      fltin: item.flight_in || "",
+      arrdtTime: item.arrival_date_time 
+        ? new Date(item.arrival_date_time).toLocaleString('en-GB', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).replace(',', '')
+        : "",
+      qnnAqnn: "",
+      whs: "",
+      si: item.special_instructions ? "Y" : "N",
+      remarks: item.special_instructions || undefined,
+    }
+    
+    uldMap.get(uld)!.push(awb)
+  })
+
+  // Konversi Map ke array Sector
+  const sectors: Sector[] = Array.from(sectorsMap.entries()).map(([sectorName, uldMap]) => {
+    const allAWBs: AWBRow[] = []
+    const uldSections: ULDSection[] = Array.from(uldMap.entries()).map(([uld, awbs]) => {
+      allAWBs.push(...awbs)
+      return {
+        uld: uld.startsWith("XX") ? uld : `XX ${uld} XX`,
+        awbs,
+        isRampTransfer: false,
+      }
+    })
+
+    // Hitung totals dari semua AWBs di sector ini
+    const totals = {
+      pcs: allAWBs.reduce((sum, awb) => sum + parseInt(awb.pcs) || 0, 0).toString(),
+      wgt: allAWBs.reduce((sum, awb) => sum + parseFloat(awb.wgt) || 0, 0).toFixed(2),
+      vol: allAWBs.reduce((sum, awb) => sum + parseFloat(awb.vol) || 0, 0).toFixed(2),
+      lvol: allAWBs.reduce((sum, awb) => sum + parseFloat(awb.lvol) || 0, 0).toFixed(2),
+    }
+
+    return {
+      sector: sectorName,
+      uldSections,
+      totals,
+    }
+  })
+
+  return {
+    flight: plan.flight_number,
+    date: formatDate(plan.flight_date),
+    acftType: plan.aircraft_type || "",
+    acftReg: plan.aircraft_registration || "",
+    headerVersion: "1",
+    pax,
+    std: formatTime(plan.std_time),
+    preparedBy: plan.prepared_by || "",
+    ttlPlnUld: plan.total_planned_uld || "",
+    uldVersion: plan.uld_version || "",
+    preparedOn: formatPreparedOn(plan.prepared_on),
+    sectors,
+  }
+}
 
 interface ExportScreenProps {
   onLogout: () => void
@@ -104,22 +228,200 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [hasVisitedDetail, setHasVisitedDetail] = useState(false)
   const [hasVisitedLogs, setHasVisitedLogs] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [loadPlanItems, setLoadPlanItems] = useState<Record<string, LoadPlanItem[]>>({})
 
-  // Load load plans from markdown on mount
-  useEffect(() => {
+  const loadFromCache = (): LoadPlan[] | null => {
     try {
-      // Parse EK0544 and EK0205
-      const plan0544 = parseLoadPlanFromText(LOAD_PLANS_CONTENT, "EK0544")
-      const plan0205 = parseLoadPlanFromText(LOAD_PLANS_CONTENT, "EK0205")
+      const cachedPlans = localStorage.getItem(STORAGE_KEY_LOAD_PLANS)
+      if (cachedPlans) {
+        const parsed = JSON.parse(cachedPlans) as LoadPlan[]
+        console.log('Loaded load plans from cache:', parsed.length, 'items')
+      }
 
-      const plans: LoadPlanDetail[] = []
-      if (plan0544) plans.push(plan0544)
-      if (plan0205) plans.push(plan0205)
+      const cachedItems = localStorage.getItem(STORAGE_KEY_LOAD_PLAN_ITEMS)
+      if (cachedItems) {
+        const parsed = JSON.parse(cachedItems) as Record<string, LoadPlanItem[]>
+        setLoadPlanItems(parsed)
+        console.log('Loaded load plan items from cache')
+      }
 
-      setLoadPlans(plans)
-    } catch (error) {
-      console.error("Error loading load plans:", error)
+      return cachedPlans ? JSON.parse(cachedPlans) as LoadPlan[] : null
+    } catch (err) {
+      console.error('Error loading from cache:', err)
+      return null
     }
+  }
+
+  const saveToCache = (plans: LoadPlan[], items?: Record<string, LoadPlanItem[]>) => {
+    try {
+      localStorage.setItem(STORAGE_KEY_LOAD_PLANS, JSON.stringify(plans))
+      localStorage.setItem(STORAGE_KEY_LAST_FETCH, Date.now().toString())
+      
+      if (items) {
+        localStorage.setItem(STORAGE_KEY_LOAD_PLAN_ITEMS, JSON.stringify(items))
+      }
+      console.log('Saved to cache')
+    } catch (err) {
+      console.error('Error saving to cache:', err)
+    }
+  }
+
+  const shouldRefreshCache = (): boolean => {
+    try {
+      const lastFetch = localStorage.getItem(STORAGE_KEY_LAST_FETCH)
+      if (!lastFetch) return true
+      
+      const lastFetchTime = parseInt(lastFetch, 10)
+      const now = Date.now()
+      return (now - lastFetchTime) > CACHE_DURATION
+    } catch {
+      return true
+    }
+  }
+
+  const fetchLoadPlanData = async (useCache: boolean = false) => {
+    try {
+      if (!useCache) {
+        setIsRefreshing(true)
+      } else {
+        setLoading(true)
+      }
+      setError(null)
+
+      console.log('Fetching load plans from Supabase...')
+      
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        throw new Error('Supabase client tidak tersedia. Pastikan environment variables sudah diatur.')
+      }
+      
+      const { data: loadPlanData, error: fetchError } = await supabase
+        .schema('public')
+        .from('load_plans')
+        .select('*')
+        .order('flight_date', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      console.log('Fetch result:', { data: loadPlanData, error: fetchError })
+
+      if (fetchError) {
+        console.error('Supabase error details:', {
+          code: fetchError.code,
+          message: fetchError.message,
+          details: fetchError.details,
+          hint: fetchError.hint
+        })
+
+        if (fetchError.code === 'PGRST116' || 
+            fetchError.message?.includes('does not exist') ||
+            fetchError.message?.includes('schema cache')) {
+          if (loadPlans.length > 0) {
+            console.log('Using cached data due to error')
+            setError(`Tidak dapat memuat data terbaru. Menampilkan data dari cache.\n\nError: ${fetchError.message}`)
+            setLoading(false)
+            setIsRefreshing(false)
+            return
+          }
+          
+          throw new Error(
+            `Tabel load_plans tidak ditemukan.\n\n` +
+            `Error: ${fetchError.message}\n` +
+            `Code: ${fetchError.code}\n\n` +
+            `Pastikan:\n` +
+            `1. Tabel load_plans sudah dibuat di schema public\n` +
+            `2. Nama tabel benar: load_plans (dengan 's' di akhir)\n` +
+            `3. Refresh schema cache di Supabase Dashboard > Settings > API\n` +
+            `4. Restart dev server setelah membuat tabel`
+          )
+        }
+        throw fetchError
+      }
+
+      const plans = loadPlanData || []
+      
+      // Fetch items untuk semua load plans
+      const itemsMap: Record<string, LoadPlanItem[]> = {}
+      for (const plan of plans) {
+        const { data: items, error: itemsError } = await supabase
+          .schema('public')
+          .from('load_plan_items')
+          .select('*')
+          .eq('load_plan_id', plan.id)
+          .order('serial_number', { ascending: true })
+
+        if (itemsError) {
+          console.error(`Error fetching items for plan ${plan.id}:`, itemsError)
+        } else {
+          itemsMap[plan.id] = items || []
+        }
+      }
+
+      setLoadPlanItems(itemsMap)
+      
+      // Konversi ke LoadPlanDetail format
+      const convertedPlans: LoadPlanDetail[] = plans.map(plan => 
+        convertToLoadPlanDetail(plan, itemsMap[plan.id] || [])
+      )
+
+      setLoadPlans(convertedPlans)
+      saveToCache(plans, itemsMap)
+    } catch (err: any) {
+      console.error('Error fetching load plan data:', err)
+      
+      if (loadPlans.length > 0) {
+        console.log('Using cached data due to error')
+        setError(`Tidak dapat memuat data terbaru. Menampilkan data dari cache.\n\nError: ${err.message}`)
+        setLoading(false)
+        setIsRefreshing(false)
+        return
+      }
+      
+      const errorMessage = err.message || 'Gagal memuat data dari Supabase'
+      setError(errorMessage)
+      setLoadPlans([])
+    } finally {
+      setLoading(false)
+      setIsRefreshing(false)
+    }
+  }
+
+  // Load data dari localStorage saat component mount
+  useEffect(() => {
+    const loadInitialData = () => {
+      try {
+        // Load cached plans
+        const cachedPlans = localStorage.getItem(STORAGE_KEY_LOAD_PLANS)
+        const cachedItems = localStorage.getItem(STORAGE_KEY_LOAD_PLAN_ITEMS)
+        
+        if (cachedPlans) {
+          const plans = JSON.parse(cachedPlans) as LoadPlan[]
+          const items = cachedItems ? JSON.parse(cachedItems) as Record<string, LoadPlanItem[]> : {}
+          
+          setLoadPlanItems(items)
+          
+          // Konversi cached plans ke LoadPlanDetail
+          const convertedPlans: LoadPlanDetail[] = plans.map(plan => 
+            convertToLoadPlanDetail(plan, items[plan.id] || [])
+          )
+          setLoadPlans(convertedPlans)
+          setLoading(false)
+          
+          if (shouldRefreshCache()) {
+            fetchLoadPlanData(false) // Refresh di background
+          }
+        } else {
+          // Tidak ada cache, fetch langsung
+          fetchLoadPlanData(false)
+        }
+      } catch (err) {
+        console.error('Error loading initial data:', err)
+        fetchLoadPlanData(false)
+      }
+    }
+    
+    loadInitialData()
   }, [])
 
   useEffect(() => {
@@ -146,9 +448,7 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
   }, [lastScrollY])
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsRefreshing(false)
+    await fetchLoadPlanData(false)
   }
 
   const handleRowClick = (loadPlan: LoadPlanDetail) => {
@@ -246,11 +546,31 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
 
       {/* Content */}
       <main className="px-1.5 pb-20">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-800 whitespace-pre-line">{error}</p>
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                fetchLoadPlanData(false)
+              }}
+              className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
+            >
+              Coba lagi
+            </button>
+          </div>
+        )}
+
         <div className="bg-white overflow-hidden">
           {/* Table Rows */}
           <div className="divide-y divide-gray-200">
-            {loadPlans.length === 0 ? (
-              <div className="px-1.5 py-3 text-center text-gray-500 text-sm">Loading load plans...</div>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Memuat data...</span>
+              </div>
+            ) : loadPlans.length === 0 ? (
+              <div className="px-1.5 py-3 text-center text-gray-500 text-sm">Tidak ada data load plan</div>
             ) : (
               loadPlans.map((loadPlan, index) => (
                 <LoadPlanRow key={index} loadPlan={loadPlan} onClick={() => handleRowClick(loadPlan)} totalAWBs={getTotalAWBs(loadPlan)} />
