@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import React from "react"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, CheckCircle } from "lucide-react"
 import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
 import { ULDNumberModal } from "./uld-number-modal"
 import { parseULDSection, formatULDSection } from "@/lib/uld-parser"
@@ -29,6 +29,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
   const [awbAssignments, setAwbAssignments] = useState<Map<string, AWBAssignment>>(new Map())
   const [awbComments, setAwbComments] = useState<AWBComment[]>([])
   const [hoveredUld, setHoveredUld] = useState<string | null>(null)
+  const [selectedAWBKeys, setSelectedAWBKeys] = useState<Set<string>>(new Set())
   
   // ULD numbers state management with localStorage
   const [uldNumbers, setUldNumbers] = useState<Map<string, string[]>>(() => {
@@ -126,6 +127,121 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
     })
   }
 
+  // Helper functions for bulk selection
+  const getAllAWBKeys = (): Set<string> => {
+    const keys = new Set<string>()
+    loadPlan.sectors.forEach((sector, sectorIndex) => {
+      sector.uldSections.forEach((uldSection, uldSectionIndex) => {
+        uldSection.awbs.forEach((awb, awbIndex) => {
+          const key = `${awb.awbNo}-${sectorIndex}-${uldSectionIndex}-${awbIndex}`
+          keys.add(key)
+        })
+      })
+    })
+    return keys
+  }
+
+  const getULDSectionAWBKeys = (sectorIndex: number, uldSectionIndex: number): Set<string> => {
+    const keys = new Set<string>()
+    const sector = loadPlan.sectors[sectorIndex]
+    if (sector && sector.uldSections[uldSectionIndex]) {
+      const uldSection = sector.uldSections[uldSectionIndex]
+      uldSection.awbs.forEach((awb, awbIndex) => {
+        const key = `${awb.awbNo}-${sectorIndex}-${uldSectionIndex}-${awbIndex}`
+        keys.add(key)
+      })
+    }
+    return keys
+  }
+
+  const isAllSelected = (keys: Set<string>): boolean => {
+    if (keys.size === 0) return false
+    return Array.from(keys).every(key => selectedAWBKeys.has(key))
+  }
+
+  const isSomeSelected = (keys: Set<string>): boolean => {
+    const selectedCount = Array.from(keys).filter(key => selectedAWBKeys.has(key)).length
+    return selectedCount > 0 && selectedCount < keys.size
+  }
+
+  const handleBulkMarkLoaded = () => {
+    if (selectedAWBKeys.size === 0) return
+
+    setAwbAssignments((prev) => {
+      const updated = new Map(prev)
+      // Iterate through all AWBs to find matching keys
+      loadPlan.sectors.forEach((sector, sectorIndex) => {
+        sector.uldSections.forEach((uldSection, uldSectionIndex) => {
+          uldSection.awbs.forEach((awb, awbIndex) => {
+            const assignmentKey = `${awb.awbNo}-${sectorIndex}-${uldSectionIndex}-${awbIndex}`
+            if (selectedAWBKeys.has(assignmentKey)) {
+              const existing = updated.get(assignmentKey)
+              if (existing) {
+                updated.set(assignmentKey, {
+                  ...existing,
+                  isLoaded: true,
+                })
+              } else {
+                updated.set(assignmentKey, {
+                  awbNo: awb.awbNo,
+                  sectorIndex,
+                  uldSectionIndex,
+                  awbIndex,
+                  assignmentData: { type: "single", isLoaded: true },
+                  isLoaded: true,
+                })
+              }
+            }
+          })
+        })
+      })
+      return updated
+    })
+    
+    // Clear selection
+    setSelectedAWBKeys(new Set())
+  }
+
+  const handleToggleSelectAll = () => {
+    const allKeys = getAllAWBKeys()
+    if (isAllSelected(allKeys)) {
+      setSelectedAWBKeys(new Set())
+    } else {
+      setSelectedAWBKeys(new Set(allKeys))
+    }
+  }
+
+  const handleToggleULDSection = (sectorIndex: number, uldSectionIndex: number) => {
+    const sectionKeys = getULDSectionAWBKeys(sectorIndex, uldSectionIndex)
+    if (isAllSelected(sectionKeys)) {
+      // Deselect all in this section
+      setSelectedAWBKeys((prev) => {
+        const updated = new Set(prev)
+        sectionKeys.forEach(key => updated.delete(key))
+        return updated
+      })
+    } else {
+      // Select all in this section
+      setSelectedAWBKeys((prev) => {
+        const updated = new Set(prev)
+        sectionKeys.forEach(key => updated.add(key))
+        return updated
+      })
+    }
+  }
+
+  const handleToggleAWB = (assignmentKey: string) => {
+    setSelectedAWBKeys((prev) => {
+      const updated = new Set(prev)
+      if (updated.has(assignmentKey)) {
+        updated.delete(assignmentKey)
+      } else {
+        updated.add(assignmentKey)
+      }
+      return updated
+    })
+  }
+
   const awbFields: Array<{ key: keyof AWBRow; label: string; className?: string }> = [
     { key: "ser", label: "SER." },
     { key: "awbNo", label: "AWB NO", className: "font-medium" },
@@ -200,6 +316,20 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                   {/* Table Header */}
                   <div className="border-b-2 border-gray-300 bg-gray-50 sticky top-0 z-10">
                     <div className="flex text-xs font-semibold text-gray-900 min-w-[800px]">
+                      {/* Checkbox column - Select All */}
+                      <div className="px-2 py-2 flex-shrink-0 flex items-center justify-center" style={{ width: "40px" }}>
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected(getAllAWBKeys())}
+                          ref={(input) => {
+                            if (input) {
+                              input.indeterminate = isSomeSelected(getAllAWBKeys())
+                            }
+                          }}
+                          onChange={handleToggleSelectAll}
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                        />
+                      </div>
                       {awbFields.map((field) => (
                         <div key={field.key} className="px-2 py-2 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}>
                           {field.label}
@@ -247,6 +377,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                 isReadOnly={isReadOnly}
                                 assignmentUld={assignmentUld}
                                 awbComments={awbComments}
+                                assignmentKey={assignmentKey}
+                                isSelected={selectedAWBKeys.has(assignmentKey)}
+                                onToggleSelect={() => handleToggleAWB(assignmentKey)}
                                 onLeftSectionClick={() => {
                                   setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                   setShowQuickActionModal(true)
@@ -273,6 +406,10 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                             uldSectionIndex={actualUldSectionIndex}
                             uldNumbers={uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []}
                             isReadOnly={isReadOnly}
+                            sectionKeys={getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex)}
+                            isAllSelected={isAllSelected(getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex))}
+                            isSomeSelected={isSomeSelected(getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex))}
+                            onToggleSection={() => handleToggleULDSection(sectorIndex, actualUldSectionIndex)}
                             onClick={() => {
                               setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                               setShowULDModal(true)
@@ -301,6 +438,10 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                 uldSectionIndex={actualUldSectionIndex}
                                 uldNumbers={uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []}
                                 isReadOnly={isReadOnly}
+                                sectionKeys={getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex)}
+                                isAllSelected={isAllSelected(getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex))}
+                                isSomeSelected={isSomeSelected(getULDSectionAWBKeys(sectorIndex, actualUldSectionIndex))}
+                                onToggleSection={() => handleToggleULDSection(sectorIndex, actualUldSectionIndex)}
                                 onClick={() => {
                                   setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                   setShowULDModal(true)
@@ -328,6 +469,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                     isReadOnly={isReadOnly}
                                     assignmentUld={assignmentUld}
                                     awbComments={awbComments}
+                                    assignmentKey={assignmentKey}
+                                    isSelected={selectedAWBKeys.has(assignmentKey)}
+                                    onToggleSelect={() => handleToggleAWB(assignmentKey)}
                                     onLeftSectionClick={() => {
                                       setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                       setShowQuickActionModal(true)
@@ -418,6 +562,19 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
         loadPlan={loadPlan}
         bcrData={generateBCRData(loadPlan, awbComments, awbAssignments, uldNumbers)}
       />
+
+      {/* Bulk Action Button */}
+      {selectedAWBKeys.size > 0 && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={handleBulkMarkLoaded}
+            className="flex items-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-lg transition-colors"
+          >
+            <CheckCircle className="w-5 h-5" />
+            <span>Mark {selectedAWBKeys.size} Selected as Fully Loaded</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -431,6 +588,9 @@ interface AWBRowProps {
   isReadOnly: boolean
   assignmentUld: string | null
   awbComments?: AWBComment[]
+  assignmentKey: string
+  isSelected: boolean
+  onToggleSelect: () => void
   onLeftSectionClick: () => void
   onMouseEnter: () => void
   onMouseLeave: () => void
@@ -445,6 +605,9 @@ function AWBRow({
   isReadOnly,
   assignmentUld,
   awbComments,
+  assignmentKey,
+  isSelected,
+  onToggleSelect,
   onLeftSectionClick,
   onMouseEnter,
   onMouseLeave,
@@ -477,6 +640,25 @@ function AWBRow({
         setHoveredSection(null)
       }}
     >
+      {/* Checkbox column */}
+      <div
+        className="px-2 py-1 flex-shrink-0 flex items-center justify-center"
+        style={{ width: "40px" }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSelect()
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+        />
+      </div>
       {/* Left section - Quick Actions (SER through SHC) */}
       {leftFields.map((field) => (
         <div
@@ -496,18 +678,7 @@ function AWBRow({
         </div>
       ))}
       
-      {/* Right section - Display only (MAN.DESC onward) */}
-      {rightFields.map((field) => (
-        <div
-          key={field.key}
-          className={`px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis ${field.className || ""}`}
-          style={{ width: field.key === "manDesc" ? "120px" : "60px" }}
-        >
-          {awb[field.key] || "-"}
-        </div>
-      ))}
-      
-      {/* Remaining column - rightmost */}
+      {/* Remaining column - positioned before right fields so it wraps to bottom */}
       <div
         className="px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis"
         style={{ width: "80px" }}
@@ -518,6 +689,17 @@ function AWBRow({
           <span className="text-xs text-gray-400">-</span>
         )}
       </div>
+      
+      {/* Right section - Display only (MAN.DESC onward) */}
+      {rightFields.map((field) => (
+        <div
+          key={field.key}
+          className={`px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis ${field.className || ""}`}
+          style={{ width: field.key === "manDesc" ? "120px" : "60px" }}
+        >
+          {awb[field.key] || "-"}
+        </div>
+      ))}
     </div>
   )
 }
@@ -529,11 +711,15 @@ interface ULDRowProps {
   uldSectionIndex: number
   uldNumbers: string[]
   isReadOnly: boolean
+  sectionKeys: Set<string>
+  isAllSelected: boolean
+  isSomeSelected: boolean
+  onToggleSection: () => void
   onClick: () => void
   isRampTransfer?: boolean
 }
 
-function ULDRow({ uld, uldNumbers, isReadOnly, onClick, isRampTransfer }: ULDRowProps) {
+function ULDRow({ uld, uldNumbers, isReadOnly, sectionKeys, isAllSelected, isSomeSelected, onToggleSection, onClick, isRampTransfer }: ULDRowProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const hasULDNumbers = uldNumbers.length > 0 && uldNumbers.some(n => n.trim() !== "")
   const filteredNumbers = uldNumbers.filter(n => n.trim() !== "")
@@ -548,6 +734,30 @@ function ULDRow({ uld, uldNumbers, isReadOnly, onClick, isRampTransfer }: ULDRow
   
   return (
     <div className={`flex text-xs font-semibold text-gray-900 border-b border-gray-200 ${isRampTransfer ? "bg-gray-50" : ""}`}>
+      {/* Checkbox column */}
+      <div
+        className="px-2 py-1 flex-shrink-0 flex items-center justify-center"
+        style={{ width: "40px" }}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSection()
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={isAllSelected}
+          ref={(input) => {
+            if (input) {
+              input.indeterminate = isSomeSelected
+            }
+          }}
+          onChange={(e) => {
+            e.stopPropagation()
+            onToggleSection()
+          }}
+          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+        />
+      </div>
       <div className="flex items-center gap-2 px-2 py-1 w-full">
         {/* Left: ULD Section */}
         <div 
