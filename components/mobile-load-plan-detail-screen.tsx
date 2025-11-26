@@ -201,11 +201,11 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                   <div className="border-b-2 border-gray-300 bg-gray-50 sticky top-0 z-10">
                     <div className="flex text-xs font-semibold text-gray-900 min-w-[800px]">
                       {awbFields.map((field) => (
-                        <div key={field.key} className="px-2 py-2 flex-shrink-0" style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}>
+                        <div key={field.key} className="px-2 py-2 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}>
                           {field.label}
                         </div>
                       ))}
-                      <div className="px-2 py-2 flex-shrink-0" style={{ width: "80px" }}>
+                      <div className="px-2 py-2 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: "80px" }}>
                         Remaining
                       </div>
                     </div>
@@ -481,7 +481,7 @@ function AWBRow({
       {leftFields.map((field) => (
         <div
           key={field.key}
-          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "left" && isReadOnly ? "bg-blue-50" : ""}`}
+          className={`px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "left" && isReadOnly ? "bg-blue-50" : ""}`}
           style={{ width: field.key === "awbNo" ? "100px" : "60px" }}
           onMouseEnter={() => isReadOnly && setHoveredSection("left")}
           onMouseLeave={() => setHoveredSection(null)}
@@ -500,7 +500,7 @@ function AWBRow({
       {rightFields.map((field) => (
         <div
           key={field.key}
-          className={`px-2 py-1 flex-shrink-0 ${field.className || ""}`}
+          className={`px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis ${field.className || ""}`}
           style={{ width: field.key === "manDesc" ? "120px" : "60px" }}
         >
           {awb[field.key] || "-"}
@@ -509,7 +509,7 @@ function AWBRow({
       
       {/* Remaining column - rightmost */}
       <div
-        className="px-2 py-1 flex-shrink-0"
+        className="px-2 py-1 flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis"
         style={{ width: "80px" }}
       >
         {remainingPieces ? (
