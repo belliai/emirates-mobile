@@ -7,7 +7,8 @@ import React, { useState as useStateHook } from "react"
 import AWBAssignmentModal, { LoadedStatusModal, type AWBAssignmentData } from "./awb-assignment-modal"
 import { useLoadPlanLogs } from "@/lib/load-plan-log-context"
 import { ULDNumberModal } from "./uld-number-modal"
-import { parseULDSection, formatULDSection } from "@/lib/uld-parser"
+import { parseULDSection, formatULDSection, formatULDSectionFromCheckedEntries } from "@/lib/uld-parser"
+import type { ULDEntry } from "./uld-number-modal"
 import { AWBQuickActionModal } from "./awb-quick-action-modal"
 
 type AWBAssignment = {
@@ -50,6 +51,21 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
     }
     return new Map()
   })
+  // ULD entries state management (includes checked states and types)
+  const [uldEntries, setUldEntries] = useState<Map<string, ULDEntry[]>>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`uld-entries-${loadPlan.flight}`)
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          return new Map(Object.entries(parsed))
+        } catch (e) {
+          return new Map()
+        }
+      }
+    }
+    return new Map()
+  })
   const [showULDModal, setShowULDModal] = useState(false)
   const [selectedULDSection, setSelectedULDSection] = useState<{
     sectorIndex: number
@@ -64,7 +80,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
     awbIndex: number
   } | null>(null)
 
-  const updateULDNumbers = (sectorIndex: number, uldSectionIndex: number, numbers: string[]) => {
+  const updateULDNumbers = (sectorIndex: number, uldSectionIndex: number, numbers: string[], entries: ULDEntry[]) => {
     const key = `${sectorIndex}-${uldSectionIndex}`
     setUldNumbers((prev) => {
       const updated = new Map(prev)
@@ -73,6 +89,16 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
       if (typeof window !== 'undefined') {
         const toStore = Object.fromEntries(updated)
         localStorage.setItem(`uld-numbers-${loadPlan.flight}`, JSON.stringify(toStore))
+      }
+      return updated
+    })
+    setUldEntries((prev) => {
+      const updated = new Map(prev)
+      updated.set(key, entries)
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        const toStore = Object.fromEntries(updated)
+        localStorage.setItem(`uld-entries-${loadPlan.flight}`, JSON.stringify(toStore))
       }
       return updated
     })
@@ -377,9 +403,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           {/* ULD Row AFTER all AWBs (matching markdown structure exactly) */}
                           {uldSection.uld && (() => {
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                            const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                             const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                            const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
+                            const finalSection = entriesForSection.length > 0 
+                              ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
+                              : formatULDSection(uldNumbersForSection, uldSection.uld)
                             
                             return (
                               <div 
@@ -445,9 +474,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {/* ULD Row first in ramp transfer */}
                               {uldSection.uld && (() => {
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                                const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                                 const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                                const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
+                                const finalSection = entriesForSection.length > 0 
+                                  ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
+                                  : formatULDSection(uldNumbersForSection, uldSection.uld)
                                 
                                 return (
                                   <div 
@@ -735,9 +767,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           {/* ULD Row AFTER all AWBs (matching markdown structure exactly) */}
                           {uldSection.uld && (() => {
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                            const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                             const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                            const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
+                            const finalSection = entriesForSection.length > 0 
+                              ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
+                              : formatULDSection(uldNumbersForSection, uldSection.uld)
                             
                             return (
                               <div 
@@ -803,9 +838,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {/* ULD Row first in ramp transfer */}
                               {uldSection.uld && (() => {
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
+                                const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                                 const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                                const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
+                                const finalSection = entriesForSection.length > 0 
+                                  ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
+                                  : formatULDSection(uldNumbersForSection, uldSection.uld)
                                 
                                 return (
                                   <div 
@@ -957,8 +995,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
           sectorIndex={selectedULDSection.sectorIndex}
           uldSectionIndex={selectedULDSection.uldSectionIndex}
           initialNumbers={uldNumbers.get(`${selectedULDSection.sectorIndex}-${selectedULDSection.uldSectionIndex}`) || []}
-          onSave={(numbers) => {
-            updateULDNumbers(selectedULDSection.sectorIndex, selectedULDSection.uldSectionIndex, numbers)
+          initialEntries={uldEntries.get(`${selectedULDSection.sectorIndex}-${selectedULDSection.uldSectionIndex}`)}
+          onSave={(numbers, entries) => {
+            updateULDNumbers(selectedULDSection.sectorIndex, selectedULDSection.uldSectionIndex, numbers, entries)
           }}
         />
       )}

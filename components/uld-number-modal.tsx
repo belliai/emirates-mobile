@@ -4,6 +4,12 @@ import { useState, useEffect } from "react"
 import { X, Plus, Trash2 } from "lucide-react"
 import { parseULDSection } from "@/lib/uld-parser"
 
+export type ULDEntry = {
+  type: string
+  number: string
+  checked: boolean
+}
+
 interface ULDNumberModalProps {
   isOpen: boolean
   onClose: () => void
@@ -11,7 +17,8 @@ interface ULDNumberModalProps {
   sectorIndex: number
   uldSectionIndex: number
   initialNumbers: string[]
-  onSave: (numbers: string[]) => void
+  initialEntries?: ULDEntry[]
+  onSave: (numbers: string[], entries: ULDEntry[]) => void
 }
 
 export function ULDNumberModal({
@@ -19,6 +26,7 @@ export function ULDNumberModal({
   onClose,
   uldSection,
   initialNumbers,
+  initialEntries,
   onSave,
 }: ULDNumberModalProps) {
   const { expandedTypes, types } = parseULDSection(uldSection)
@@ -31,48 +39,61 @@ export function ULDNumberModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Initialize with existing numbers or empty strings based on expandedTypes count
-      const expectedCount = expandedTypes.length
-      let newNumbers: string[] = []
-      let newTypes: string[] = []
-      
-      if (initialNumbers.length === expectedCount && expectedCount > 0) {
-        newNumbers = [...initialNumbers]
-        newTypes = [...expandedTypes]
-      } else if (initialNumbers.length > 0) {
-        // If we have saved numbers, use those and extend types
-        newNumbers = [...initialNumbers]
-        // Extend types array to match numbers length
-        const extendedTypes = [...expandedTypes]
-        const lastType = expandedTypes.length > 0 
-          ? expandedTypes[expandedTypes.length - 1] 
-          : (types[0] || "PMC")
-        while (extendedTypes.length < initialNumbers.length) {
-          extendedTypes.push(lastType)
+      // Initialize with existing entries if available, otherwise use numbers
+      if (initialEntries && initialEntries.length > 0) {
+        setUldNumbers(initialEntries.map(e => e.number))
+        setCurrentTypes(initialEntries.map(e => e.type))
+        setCheckedStates(initialEntries.map(e => e.checked))
+      } else {
+        // Initialize with existing numbers or empty strings based on expandedTypes count
+        const expectedCount = expandedTypes.length
+        let newNumbers: string[] = []
+        let newTypes: string[] = []
+        
+        if (initialNumbers.length === expectedCount && expectedCount > 0) {
+          newNumbers = [...initialNumbers]
+          newTypes = [...expandedTypes]
+        } else if (initialNumbers.length > 0) {
+          // If we have saved numbers, use those and extend types
+          newNumbers = [...initialNumbers]
+          // Extend types array to match numbers length
+          const extendedTypes = [...expandedTypes]
+          const lastType = expandedTypes.length > 0 
+            ? expandedTypes[expandedTypes.length - 1] 
+            : (types[0] || "PMC")
+          while (extendedTypes.length < initialNumbers.length) {
+            extendedTypes.push(lastType)
+          }
+          newTypes = extendedTypes
+        } else if (expectedCount > 0) {
+          newNumbers = Array(expectedCount).fill("")
+          newTypes = [...expandedTypes]
         }
-        newTypes = extendedTypes
-      } else if (expectedCount > 0) {
-        newNumbers = Array(expectedCount).fill("")
-        newTypes = [...expandedTypes]
+        
+        setUldNumbers(newNumbers)
+        setCurrentTypes(newTypes)
+        // Initialize checked states based on whether numbers are filled
+        setCheckedStates(newNumbers.map(n => n.trim() !== ""))
       }
-      
-      setUldNumbers(newNumbers)
-      setCurrentTypes(newTypes)
-      // Initialize checked states based on whether numbers are filled
-      setCheckedStates(newNumbers.map(n => n.trim() !== ""))
     } else {
       // Reset when modal closes
       setUldNumbers([])
       setCurrentTypes([])
       setCheckedStates([])
     }
-  }, [isOpen, initialNumbers.length, expandedTypes.length])
+  }, [isOpen, initialNumbers.length, expandedTypes.length, initialEntries])
 
   if (!isOpen) return null
 
   const handleSave = () => {
-    // Save all ULD numbers (including empty ones)
-    onSave(uldNumbers)
+    // Create entries array with type, number, and checked state
+    const entries: ULDEntry[] = uldNumbers.map((number, index) => ({
+      type: currentTypes[index] || types[0] || "PMC",
+      number: number || "",
+      checked: checkedStates[index] || false,
+    }))
+    // Save all ULD numbers (including empty ones) and entries
+    onSave(uldNumbers, entries)
     onClose()
   }
 

@@ -106,3 +106,54 @@ export function formatULDSection(uldNumbers: string[], originalSection: string):
   return `XX ${parts.join(" ")} XX`
 }
 
+/**
+ * Format ULD section string based on checked ULD entries for Final display
+ * Includes checked entries even if numbers are empty
+ * Example: entries with checked PMC entries (even without numbers) -> "XX 02PMC XX"
+ */
+export function formatULDSectionFromCheckedEntries(
+  entries: Array<{ type: string; number: string; checked: boolean }>, 
+  originalSection: string
+): string {
+  // Include all checked entries, even if numbers are empty
+  const checkedEntries = entries.filter(e => e.checked)
+  
+  if (checkedEntries.length === 0) {
+    return originalSection
+  }
+  
+  // Group by type and count
+  const typeCounts: Record<string, number> = {}
+  checkedEntries.forEach(entry => {
+    typeCounts[entry.type] = (typeCounts[entry.type] || 0) + 1
+  })
+  
+  // Get original types order
+  const { types } = parseULDSection(originalSection)
+  
+  // Build the formatted string maintaining the order of types from original
+  const parts: string[] = []
+  for (const type of types) {
+    const count = typeCounts[type] || 0
+    if (count > 0) {
+      const countStr = String(count).padStart(2, "0")
+      parts.push(`${countStr}${type}`)
+    }
+  }
+  
+  // Also include any types that weren't in the original (newly added)
+  Object.keys(typeCounts).forEach(type => {
+    if (!types.includes(type)) {
+      const count = typeCounts[type]
+      const countStr = String(count).padStart(2, "0")
+      parts.push(`${countStr}${type}`)
+    }
+  })
+  
+  if (parts.length === 0) {
+    return originalSection
+  }
+  
+  return `XX ${parts.join(" ")} XX`
+}
+
