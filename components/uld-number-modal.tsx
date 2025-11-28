@@ -24,6 +24,7 @@ export function ULDNumberModal({
   const { expandedTypes, types } = parseULDSection(uldSection)
   const [uldNumbers, setUldNumbers] = useState<string[]>([])
   const [currentTypes, setCurrentTypes] = useState<string[]>([])
+  const [checkedStates, setCheckedStates] = useState<boolean[]>([])
   
   // Available ULD types for dropdown
   const availableTypes = ["PMC", "AKE", "AKL", "AMF", "ALF", "PLA", "PAG", "AMP", "RKE", "BULK"]
@@ -32,12 +33,15 @@ export function ULDNumberModal({
     if (isOpen) {
       // Initialize with existing numbers or empty strings based on expandedTypes count
       const expectedCount = expandedTypes.length
+      let newNumbers: string[] = []
+      let newTypes: string[] = []
+      
       if (initialNumbers.length === expectedCount && expectedCount > 0) {
-        setUldNumbers([...initialNumbers])
-        setCurrentTypes([...expandedTypes])
+        newNumbers = [...initialNumbers]
+        newTypes = [...expandedTypes]
       } else if (initialNumbers.length > 0) {
         // If we have saved numbers, use those and extend types
-        setUldNumbers([...initialNumbers])
+        newNumbers = [...initialNumbers]
         // Extend types array to match numbers length
         const extendedTypes = [...expandedTypes]
         const lastType = expandedTypes.length > 0 
@@ -46,19 +50,21 @@ export function ULDNumberModal({
         while (extendedTypes.length < initialNumbers.length) {
           extendedTypes.push(lastType)
         }
-        setCurrentTypes(extendedTypes)
+        newTypes = extendedTypes
       } else if (expectedCount > 0) {
-        setUldNumbers(Array(expectedCount).fill(""))
-        setCurrentTypes([...expandedTypes])
-      } else {
-        // No expected ULDs, start with empty array
-        setUldNumbers([])
-        setCurrentTypes([])
+        newNumbers = Array(expectedCount).fill("")
+        newTypes = [...expandedTypes]
       }
+      
+      setUldNumbers(newNumbers)
+      setCurrentTypes(newTypes)
+      // Initialize checked states based on whether numbers are filled
+      setCheckedStates(newNumbers.map(n => n.trim() !== ""))
     } else {
       // Reset when modal closes
       setUldNumbers([])
       setCurrentTypes([])
+      setCheckedStates([])
     }
   }, [isOpen, initialNumbers.length, expandedTypes.length])
 
@@ -74,12 +80,26 @@ export function ULDNumberModal({
     const updated = [...uldNumbers]
     updated[index] = value
     setUldNumbers(updated)
+    // Update checked state when number is filled/cleared
+    setCheckedStates((prev) => {
+      const updatedChecked = [...prev]
+      updatedChecked[index] = value.trim() !== ""
+      return updatedChecked
+    })
   }
 
   const handleTypeChange = (index: number, value: string) => {
     setCurrentTypes((prev) => {
       const updated = [...prev]
       updated[index] = value
+      return updated
+    })
+  }
+
+  const handleCheckedChange = (index: number, checked: boolean) => {
+    setCheckedStates((prev) => {
+      const updated = [...prev]
+      updated[index] = checked
       return updated
     })
   }
@@ -98,6 +118,7 @@ export function ULDNumberModal({
             : (types[0] || "PMC"))
       return [...prevTypes, newType]
     })
+    setCheckedStates((prev) => [...prev, false])
   }
 
   const handleRemoveItem = (index: number) => {
@@ -108,6 +129,12 @@ export function ULDNumberModal({
       return prev
     })
     setCurrentTypes((prev) => {
+      if (prev.length > 0) {
+        return prev.filter((_, i) => i !== index)
+      }
+      return prev
+    })
+    setCheckedStates((prev) => {
       if (prev.length > 0) {
         return prev.filter((_, i) => i !== index)
       }
@@ -147,6 +174,19 @@ export function ULDNumberModal({
                   <label className="text-xs font-medium text-gray-700 whitespace-nowrap min-w-[60px] sm:min-w-[80px]">
                     ULD {index + 1}:
                   </label>
+                  <input
+                    type="checkbox"
+                    checked={checkedStates[index] || false}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      handleCheckedChange(index, e.target.checked)
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation()
+                    }}
+                    className="w-4 h-4 text-[#D71A21] border-gray-300 rounded focus:ring-[#D71A21] cursor-pointer flex-shrink-0"
+                    title="Mark as final"
+                  />
                   <select
                     value={type}
                     onChange={(e) => {
@@ -172,7 +212,7 @@ export function ULDNumberModal({
                     onClick={(e) => e.stopPropagation()}
                     onFocus={(e) => e.stopPropagation()}
                     className="flex-1 min-w-[120px] px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-gray-400"
-                    placeholder={`Enter ULD number`}
+                    placeholder="Enter ULD number (optional)"
                     autoFocus={index === 0 && uldNumbers.every(n => !n)}
                   />
                   <button
