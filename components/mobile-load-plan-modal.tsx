@@ -379,7 +379,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                             const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                            const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                            const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
                             
                             return (
                               <div 
@@ -421,11 +421,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                   >
                                     {uldSection.uld}
                                   </div>
-                                  {finalSection && (
-                                    <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
-                                      Final: <span className="font-mono font-semibold">{finalSection}</span>
-                                    </div>
-                                  )}
+                                  <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                    Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                  </div>
                                 </div>
                               </div>
                             )
@@ -449,7 +447,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                                 const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                                const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                                const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
                                 
                                 return (
                                   <div 
@@ -476,11 +474,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                       >
                                         {uldSection.uld}
                                       </div>
-                                      {finalSection && (
-                                        <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
-                                          Final: <span className="font-mono font-semibold">{finalSection}</span>
-                                        </div>
-                                      )}
+                                      <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                        Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 )
@@ -741,7 +737,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                             const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                            const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                            const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
                             
                             return (
                               <div 
@@ -783,11 +779,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                   >
                                     {uldSection.uld}
                                   </div>
-                                  {finalSection && (
-                                    <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
-                                      Final: <span className="font-mono font-semibold">{finalSection}</span>
-                                    </div>
-                                  )}
+                                  <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                    Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                  </div>
                                 </div>
                               </div>
                             )
@@ -811,7 +805,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
                                 const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
-                                const finalSection = hasULDNumbers ? formatULDSection(uldNumbersForSection, uldSection.uld) : null
+                                const finalSection = formatULDSection(uldNumbersForSection, uldSection.uld)
                                 
                                 return (
                                   <div 
@@ -838,11 +832,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                       >
                                         {uldSection.uld}
                                       </div>
-                                      {finalSection && (
-                                        <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
-                                          Final: <span className="font-mono font-semibold">{finalSection}</span>
-                                        </div>
-                                      )}
+                                      <div className="text-xs font-normal text-gray-600 flex-shrink-0 pl-3 border-l border-gray-200">
+                                        Final: <span className="font-mono font-semibold">{finalSection}</span>
+                                      </div>
                                     </div>
                                   </div>
                                 )
