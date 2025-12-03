@@ -8,6 +8,8 @@ import MobileLoadPlanDetailScreen from "./mobile-load-plan-detail-screen"
 import LoadPlanLogsScreen from "./load-plan-logs-screen"
 import BottomNav from "./bottom-nav"
 import MenuDrawer from "./menu-drawer"
+import { useStaff } from "@/lib/staff-context"
+import { getSupabaseClient } from "@/lib/supabase"
 
 interface ExportScreenProps {
   onLogout: () => void
@@ -28,18 +30,74 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
   const [hasVisitedLogs, setHasVisitedLogs] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { staff, displayName, fetchAssignedFlights } = useStaff()
 
-  // Fetch load plans list on mount (fast - no items)
+  // Fetch load plans list on mount - filtered by staff if logged in
   const fetchLoadPlans = async () => {
     try {
       setIsRefreshing(true)
       setError(null)
       
       console.log('[ExportScreen] Fetching load plans list...')
-      const plans = await getLoadPlansFromSupabase()
       
-      setLoadPlans(plans)
-      console.log(`[ExportScreen] Loaded ${plans.length} load plans`)
+      // If staff is logged in, filter by assigned flights
+      if (staff && displayName) {
+        console.log(`[ExportScreen] Staff logged in: ${displayName}, fetching assigned flights...`)
+        const assignedFlights = await fetchAssignedFlights()
+        
+        if (assignedFlights.length === 0) {
+          console.log('[ExportScreen] No flights assigned to this staff member')
+          setLoadPlans([])
+          setLoading(false)
+          setIsRefreshing(false)
+          return
+        }
+        
+        // Get flight numbers with EK prefix
+        const flightNumbers = assignedFlights.map(f => {
+          const flightNo = f.flight_no
+          return flightNo.startsWith("EK") ? flightNo : `EK${flightNo}`
+        })
+        
+        console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights`)
+        
+        // Fetch load plans for assigned flights only
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+          throw new Error('Supabase client not available')
+        }
+        
+        const { data: plans, error: fetchError } = await supabase
+          .from('load_plans')
+          .select('*')
+          .in('flight_number', flightNumbers)
+          .order('flight_date', { ascending: false })
+        
+        if (fetchError) {
+          throw new Error(fetchError.message)
+        }
+        
+        // Transform to LoadPlan format
+        const transformedPlans = (plans || []).map((plan: any) => ({
+          flight: plan.flight_number || "",
+          date: formatDateForDisplay(plan.flight_date),
+          acftType: plan.aircraft_type || "",
+          acftReg: plan.aircraft_registration || "",
+          pax: plan.route_full || (plan.route_origin && plan.route_destination ? `${plan.route_origin}/${plan.route_destination}` : ""),
+          std: formatTime(plan.std_time),
+          uldVersion: plan.uld_version || "",
+          ttlPlnUld: plan.total_planned_uld || "",
+        }))
+        
+        setLoadPlans(transformedPlans)
+        console.log(`[ExportScreen] Loaded ${transformedPlans.length} load plans`)
+      } else {
+        // No staff - show all load plans
+        console.log('[ExportScreen] No staff logged in, showing all load plans')
+        const plans = await getLoadPlansFromSupabase()
+        setLoadPlans(plans)
+        console.log(`[ExportScreen] Loaded ${plans.length} load plans`)
+      }
     } catch (err: any) {
       console.error('[ExportScreen] Error fetching load plans:', err)
       setError(err.message || 'Failed to load data')
@@ -48,6 +106,26 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
       setLoading(false)
       setIsRefreshing(false)
     }
+  }
+  
+  // Helper to format date
+  function formatDateForDisplay(dateStr: string | null): string {
+    if (!dateStr) return ""
+    try {
+      const date = new Date(dateStr)
+      const day = date.getDate()
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      const month = monthNames[date.getMonth()]
+      return `${day}${month}`
+    } catch {
+      return dateStr
+    }
+  }
+  
+  // Helper to format time
+  function formatTime(timeStr: string | null): string {
+    if (!timeStr) return ""
+    return timeStr.substring(0, 5)
   }
 
   useEffect(() => {

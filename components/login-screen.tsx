@@ -7,21 +7,49 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { findStaffByStaffNo, type BuildupStaff } from "@/lib/buildup-staff"
 
 interface LoginScreenProps {
-  onLogin: (username: string) => void
+  onLogin: (staff: BuildupStaff | null) => void
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
+  const [staffId, setStaffId] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const username = email.includes("@") ? email.split("@")[0] : email
-    onLogin(username)
+    setError(null)
+    setIsLoading(true)
+    
+    try {
+      // If staff ID is provided, look up staff in Supabase
+      if (staffId.trim()) {
+        const staff = await findStaffByStaffNo(staffId.trim())
+        
+        if (!staff) {
+          setError("Staff ID not found. Please check and try again.")
+          setIsLoading(false)
+          return
+        }
+
+        // For demo purposes, password is not validated
+        console.log("[Login] Staff found:", staff.name, "Job code:", staff.job_code)
+        onLogin(staff)
+      } else {
+        // No staff ID provided - login as guest to see all load plans
+        console.log("[Login] No staff ID provided, logging in as guest")
+        onLogin(null as any) // Pass null to indicate no staff
+      }
+    } catch (err) {
+      console.error("[Login] Error:", err)
+      setError("An error occurred. Please try again.")
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -47,16 +75,22 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-gray-700">
-                Username
+              <Label htmlFor="staffId" className="text-gray-700">
+                Staff ID (optional)
               </Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="belli@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="staffId"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Enter your staff ID (optional)"
+                value={staffId}
+                onChange={(e) => {
+                  setStaffId(e.target.value)
+                  setError(null)
+                }}
                 className="mt-1 bg-gray-50 border-gray-300"
+                disabled={isLoading}
               />
             </div>
 
@@ -72,11 +106,13 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-gray-50 border-gray-300 pr-10"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -84,9 +120,15 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             </div>
           </div>
 
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember" />
+              <Checkbox id="remember" disabled={isLoading} />
               <label htmlFor="remember" className="text-sm text-gray-700 cursor-pointer">
                 Remember me
               </label>
@@ -96,8 +138,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             </button>
           </div>
 
-          <Button type="submit" className="w-full bg-[#D71A21] hover:bg-[#B81519] text-white">
-            Login
+          <Button 
+            type="submit" 
+            className="w-full bg-[#D71A21] hover:bg-[#B81519] text-white"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Login"
+            )}
           </Button>
 
           <div className="relative">
@@ -110,7 +163,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
 
           <div className="space-y-3">
-            <Button type="button" variant="outline" className="w-full border-gray-300 bg-white hover:bg-gray-50">
+            <Button type="button" variant="outline" className="w-full border-gray-300 bg-white hover:bg-gray-50" disabled={isLoading}>
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -132,7 +185,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
               Continue with Google
             </Button>
 
-            <Button type="button" variant="outline" className="w-full border-gray-300 bg-white hover:bg-gray-50">
+            <Button type="button" variant="outline" className="w-full border-gray-300 bg-white hover:bg-gray-50" disabled={isLoading}>
               <svg className="mr-2 h-5 w-5" fill="#1877F2" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
