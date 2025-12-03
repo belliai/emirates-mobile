@@ -18,7 +18,9 @@ import BottomNav from "@/components/bottom-nav"
 import { FlightProvider, useFlights } from "@/lib/flight-context"
 import { ExportFlightProvider, useExportFlights } from "@/lib/export-flight-context"
 import { LoadPlanLogProvider } from "@/lib/load-plan-log-context"
+import { StaffProvider, useStaff } from "@/lib/staff-context"
 import type { Flight, ULD } from "@/lib/flight-data"
+import type { BuildupStaff } from "@/lib/buildup-staff"
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<
@@ -36,6 +38,7 @@ function AppContent() {
 
   const { flights: importFlights, updateULDStatus: updateImportStatus, addMultipleStatusUpdates: addImportMultiple, setUsername } = useFlights()
   const { flights: exportFlights, updateULDStatus: updateExportStatus, addMultipleStatusUpdates: addExportMultiple } = useExportFlights()
+  const { setStaff, logout: staffLogout } = useStaff()
 
   const selectedFlight = selectedFlightNumber
     ? (parentScreen === "export"
@@ -110,14 +113,22 @@ function AppContent() {
     }
   }
 
-  const handleLogin = (username: string) => {
-    if (!username || username.trim() === "") {
-      const randomName = getRandomName()
-      setUsername(randomName)
+  const handleLogin = (staff: BuildupStaff | null) => {
+    if (staff) {
+      // Store staff in context
+      setStaff(staff)
+      console.log("[App] Staff logged in:", staff.name, "Job code:", staff.job_code)
     } else {
-      setUsername(username)
+      console.log("[App] Guest login - no staff ID provided")
     }
+    
+    // Go to landing screen (which leads to export/import)
     setCurrentScreen("landing")
+  }
+
+  const handleLogout = () => {
+    staffLogout()
+    setCurrentScreen("login")
   }
 
   const handleNavigate = (screen: "landing" | "import" | "export" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation") => {
@@ -178,13 +189,13 @@ function AppContent() {
         />
       ) : currentScreen === "import" ? (
         <HomeScreen
-          onLogout={() => setCurrentScreen("login")}
+          onLogout={handleLogout}
           onFlightSelect={handleFlightSelect}
           onNavigate={handleNavigate}
         />
       ) : currentScreen === "export" ? (
         <ExportScreen
-          onLogout={() => setCurrentScreen("login")}
+          onLogout={handleLogout}
           onFlightSelect={handleFlightSelect}
           onNavigate={handleNavigate}
         />
@@ -205,7 +216,7 @@ function AppContent() {
           )
         )
       ) : currentScreen === "loadPlan" ? (
-        <LoadPlanScreen onBack={() => setCurrentScreen(parentScreen)} />
+        <LoadPlanScreen onBack={handleLogout} />
       ) : currentScreen === "newULD" ? (
         <NewULDScreen onBack={() => setCurrentScreen(parentScreen)} />
       ) : currentScreen === "dropStatus" ? (
@@ -271,12 +282,14 @@ function getRandomName(): string {
 
 export default function Page() {
   return (
-    <LoadPlanLogProvider>
-      <ExportFlightProvider>
-        <FlightProvider>
-          <AppContent />
-        </FlightProvider>
-      </ExportFlightProvider>
-    </LoadPlanLogProvider>
+    <StaffProvider>
+      <LoadPlanLogProvider>
+        <ExportFlightProvider>
+          <FlightProvider>
+            <AppContent />
+          </FlightProvider>
+        </ExportFlightProvider>
+      </LoadPlanLogProvider>
+    </StaffProvider>
   )
 }

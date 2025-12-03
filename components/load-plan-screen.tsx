@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Loader2, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
+import { useStaff } from '@/lib/staff-context'
 
 interface LoadPlanScreenProps {
   onBack: () => void
@@ -50,8 +51,9 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
   const [error, setError] = useState<string | null>(null)
   const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set())
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const { staff, displayName, fullName, fetchAssignedFlights, assignedFlights } = useStaff()
 
-  // Fetch load plans on mount
+  // Fetch load plans on mount - filtered by assigned flights if staff is logged in
   useEffect(() => {
     fetchLoadPlans()
   }, [])
@@ -68,11 +70,33 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
         throw new Error('Supabase client not available. Check environment variables.')
       }
       
-      const { data: loadPlanData, error: fetchError } = await supabase
+      // If staff is logged in, fetch assigned flights first
+      let assignedFlightNumbers: string[] = []
+      if (staff && displayName) {
+        console.log(`[LoadPlanScreen] Staff logged in: ${displayName}, fetching assigned flights...`)
+        const flights = await fetchAssignedFlights()
+        assignedFlightNumbers = flights.map(f => {
+          const flightNo = f.flight_no
+          return flightNo.startsWith("EK") ? flightNo : `EK${flightNo}`
+        })
+        console.log(`[LoadPlanScreen] Found ${assignedFlightNumbers.length} assigned flights:`, assignedFlightNumbers)
+      }
+
+      // Build query
+      let query = supabase
         .from('load_plans')
         .select('*')
+      
+      // Filter by assigned flights if staff is logged in
+      if (staff && assignedFlightNumbers.length > 0) {
+        query = query.in('flight_number', assignedFlightNumbers)
+      }
+      
+      query = query
         .order('flight_date', { ascending: false })
         .order('created_at', { ascending: false })
+
+      const { data: loadPlanData, error: fetchError } = await query
 
       if (fetchError) {
         console.error('[LoadPlanScreen] Supabase error:', fetchError)
@@ -82,6 +106,11 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
       const plans = loadPlanData || []
       setLoadPlans(plans)
       console.log(`[LoadPlanScreen] Loaded ${plans.length} load plans`)
+      
+      // Show helpful message if staff is logged in but no flights assigned
+      if (staff && assignedFlightNumbers.length === 0) {
+        console.log('[LoadPlanScreen] No flights assigned to this staff member')
+      }
     } catch (err: any) {
       console.error('[LoadPlanScreen] Error fetching load plans:', err)
       setError(err.message || 'Failed to load data')
