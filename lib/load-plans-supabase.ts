@@ -13,6 +13,27 @@ export type LoadPlan = {
   uldVersion: string
 }
 
+// Shift types for BUP Allocation
+export type ShiftType = "night" | "day" | "current"
+export type PeriodType = "early-morning" | "late-morning" | "afternoon" | "all"
+export type WaveType = "first-wave" | "second-wave" | "all"
+
+// BUP Allocation type - represents a flight allocation from uploaded CSV
+export type BUPAllocation = {
+  carrier: string
+  flightNo: string
+  etd: string
+  routing: string
+  staff: string
+  mobile: string
+  acType: string
+  regnNo: string
+  shiftType?: ShiftType
+  period?: PeriodType
+  wave?: WaveType | null
+  date?: string | null
+}
+
 /**
  * Format date from YYYY-MM-DD to DDMMM format (e.g., "2024-10-12" -> "12Oct")
  */
@@ -137,6 +158,62 @@ export async function getLoadPlansFromSupabase(): Promise<LoadPlan[]> {
     return transformed
   } catch (error) {
     console.error("[LoadPlans] Error fetching load plans:", error)
+    return []
+  }
+}
+
+/**
+ * Fetch BUP allocations from Supabase
+ * These represent flight-to-staff assignments made from the desktop app
+ */
+export async function getBupAllocationsFromSupabase(): Promise<BUPAllocation[]> {
+  try {
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      console.log("[BupAllocations] Supabase not configured, returning empty array")
+      return []
+    }
+
+    const { data: allocations, error } = await supabase
+      .from("bup_allocations")
+      .select("*")
+      .order("etd", { ascending: true })
+
+    if (error) {
+      console.error("[BupAllocations] Error fetching allocations:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      return []
+    }
+
+    if (!allocations || allocations.length === 0) {
+      console.log("[BupAllocations] No BUP allocations found in database")
+      return []
+    }
+
+    // Transform to BUPAllocation format
+    const transformed: BUPAllocation[] = allocations.map((alloc: any) => ({
+      carrier: alloc.carrier || "EK",
+      flightNo: alloc.flight_no || "",
+      etd: alloc.etd || "",
+      routing: alloc.routing || "",
+      staff: alloc.staff || "",
+      mobile: alloc.mobile || "",
+      acType: alloc.ac_type || alloc.aircraft_type || "",
+      regnNo: alloc.regn_no || alloc.aircraft_registration || "",
+      shiftType: alloc.shift_type,
+      period: alloc.period,
+      wave: alloc.wave,
+      date: alloc.date || alloc.flight_date,
+    }))
+
+    console.log(`[BupAllocations] Successfully fetched ${transformed.length} BUP allocations from Supabase`)
+    return transformed
+  } catch (error) {
+    console.error("[BupAllocations] Error fetching BUP allocations:", error)
     return []
   }
 }
