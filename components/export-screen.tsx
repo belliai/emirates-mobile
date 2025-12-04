@@ -346,6 +346,22 @@ function LoadPlanRow({ loadPlan, onClick, isLoadingDetail }: LoadPlanRowProps) {
     return loadPlan.pax
   }
 
+  // Extract total ULD count from ttlPlnUld (e.g., "03PMC" -> 3, "04PMC/03AKE" -> 7)
+  const getTotalUldCount = () => {
+    if (!loadPlan.ttlPlnUld) return "-"
+    
+    // Split by "/" and extract numbers, then sum them
+    const parts = loadPlan.ttlPlnUld.split("/")
+    const total = parts.reduce((sum, part) => {
+      // Extract leading digits from each part (e.g., "03PMC" -> 3, "07AKE" -> 7)
+      const match = part.match(/^(\d+)/)
+      const num = match ? parseInt(match[1], 10) : 0
+      return sum + num
+    }, 0)
+    
+    return total > 0 ? total.toString() : "-"
+  }
+
   return (
     <button
       onClick={onClick}
@@ -356,7 +372,8 @@ function LoadPlanRow({ loadPlan, onClick, isLoadingDetail }: LoadPlanRowProps) {
       <div className="text-center text-gray-700">{loadPlan.std}</div>
       <div className="text-center text-gray-700">{getRoute()}</div>
       <div className="relative flex items-center justify-center pl-8">
-        <span className="font-medium text-gray-900">{loadPlan.ttlPlnUld || "-"}</span>
+        {/* <span className="font-medium text-gray-900">{loadPlan.ttlPlnUld || "-"}</span> */}
+        <span className="font-medium text-gray-900">{getTotalUldCount()}</span>
         <svg
           className="h-5 w-5 text-gray-400 group-hover:text-[#D71A21] transition-colors ml-1"
           fill="none"
