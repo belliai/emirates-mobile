@@ -295,3 +295,20 @@ export function generateMobileNumber(staffNo: number): string {
   
   return `+971 ${prefix} ${part1} ${part2}`
 }
+
+// Re-export BUPAllocation from load-plans-supabase
+export type { BUPAllocation } from "./load-plans-supabase"
+
+/**
+ * Get flights assigned to a specific staff member by display name
+ * Queries bup_allocations table filtered by staff name
+ */
+export async function getAssignedFlights(displayName: string): Promise<import("./load-plans-supabase").BUPAllocation[]> {
+  const { getBupAllocationsFromSupabase } = await import("./load-plans-supabase")
+  const allAllocations = await getBupAllocationsFromSupabase()
+  
+  // Filter by staff display name (case-insensitive)
+  return allAllocations.filter(alloc => 
+    alloc.staff.toLowerCase() === displayName.toLowerCase()
+  )
+}

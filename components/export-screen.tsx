@@ -55,8 +55,8 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
         
         // Get flight numbers with EK prefix
         const flightNumbers = assignedFlights.map(f => {
-          const flightNo = f.flight_no
-          return flightNo.startsWith("EK") ? flightNo : `EK${flightNo}`
+          const flightNo = f.flightNo // Use camelCase (TypeScript type)
+          return flightNo && flightNo.startsWith("EK") ? flightNo : `EK${flightNo || ""}`
         })
         
         console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights`)
