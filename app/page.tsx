@@ -122,8 +122,9 @@ function AppContent() {
       console.log("[App] Guest login - no staff ID provided")
     }
     
-    // Go to landing screen (which leads to export/import)
-    setCurrentScreen("landing")
+    // Go directly to Load Plans (export screen)
+    setParentScreen("export")
+    setCurrentScreen("export")
   }
 
   const handleLogout = () => {
