@@ -132,7 +132,7 @@ function AppContent() {
     setCurrentScreen("login")
   }
 
-  const handleNavigate = (screen: "landing" | "import" | "export" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation") => {
+  const handleNavigate = (screen: "landing" | "import" | "export" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation" | "screening") => {
     if (screen === "landing") {
       setCurrentScreen("landing")
     } else if (screen === "import") {
@@ -141,6 +141,9 @@ function AppContent() {
     } else if (screen === "export") {
       setParentScreen("export")
       setCurrentScreen("export")
+    } else if (screen === "screening") {
+      // Screening coming soon - handled in menu drawer
+      return
     } else {
       setCurrentScreen(screen)
     }
