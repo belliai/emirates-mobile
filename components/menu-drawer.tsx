@@ -33,7 +33,7 @@ export default function MenuDrawer({ isOpen, onClose, onNavigate }: MenuDrawerPr
         <div className="py-2">
           {/* Load Plans */}
           <button
-            onClick={() => handleNavigate("loadPlan")}
+            onClick={() => handleNavigate("export")}
             className="w-full px-4 py-3 text-left text-gray-900 hover:bg-gray-50 transition-colors flex items-center gap-3"
           >
             <FileText className="h-5 w-5 text-gray-600" />
