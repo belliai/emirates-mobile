@@ -16,12 +16,6 @@ export default function MenuDrawer({ isOpen, onClose, onNavigate }: MenuDrawerPr
     onClose()
   }
 
-  const handleScreeningClick = () => {
-    // Show toast or alert for coming soon
-    alert("Screening feature coming soon!")
-    onClose()
-  }
-
   return (
     <div className="fixed inset-0 z-[100]">
       {/* Overlay */}
@@ -46,12 +40,12 @@ export default function MenuDrawer({ isOpen, onClose, onNavigate }: MenuDrawerPr
             <span>Load Plans</span>
           </button>
 
-          {/* Screening - Coming Soon */}
+          {/* Screening */}
           <button
-            onClick={handleScreeningClick}
-            className="w-full px-4 py-3 text-left text-gray-400 hover:bg-gray-50 transition-colors flex items-center gap-3 relative"
+            onClick={() => handleNavigate("screening")}
+            className="w-full px-4 py-3 text-left text-gray-900 hover:bg-gray-50 transition-colors flex items-center gap-3 relative"
           >
-            <Shield className="h-5 w-5 text-gray-400" />
+            <Shield className="h-5 w-5 text-gray-600" />
             <span>Screening</span>
             <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">Coming Soon</span>
           </button>

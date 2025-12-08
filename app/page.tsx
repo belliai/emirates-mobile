@@ -14,6 +14,7 @@ import DropStatusScreen from "@/components/drop-status-screen"
 import InductionStatusScreen from "@/components/induction-status-screen"
 import ReconciliationScreen from "@/components/reconciliation-screen"
 import LoadPlanScreen from "@/components/load-plan-screen"
+import ScreeningScreen from "@/components/screening-screen"
 import BottomNav from "@/components/bottom-nav"
 import { FlightProvider, useFlights } from "@/lib/flight-context"
 import { ExportFlightProvider, useExportFlights } from "@/lib/export-flight-context"
@@ -24,7 +25,7 @@ import type { BuildupStaff } from "@/lib/buildup-staff"
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<
-    "login" | "landing" | "import" | "export" | "detail" | "history" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation"
+    "login" | "landing" | "import" | "export" | "detail" | "history" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation" | "screening"
   >("login")
   const [parentScreen, setParentScreen] = useState<"import" | "export">("import")
   const [selectedFlightNumber, setSelectedFlightNumber] = useState<string | null>(null)
@@ -141,9 +142,6 @@ function AppContent() {
     } else if (screen === "export") {
       setParentScreen("export")
       setCurrentScreen("export")
-    } else if (screen === "screening") {
-      // Screening coming soon - handled in menu drawer
-      return
     } else {
       setCurrentScreen(screen)
     }
@@ -173,7 +171,8 @@ function AppContent() {
     currentScreen !== "newULD" &&
     currentScreen !== "dropStatus" &&
     currentScreen !== "inductionStatus" &&
-    currentScreen !== "reconciliation"
+    currentScreen !== "reconciliation" &&
+    currentScreen !== "screening"
   const isBottomNavVisible = showBottomNav && isNavVisible
 
   return (
@@ -229,6 +228,8 @@ function AppContent() {
         <InductionStatusScreen onBack={() => setCurrentScreen(parentScreen)} />
       ) : currentScreen === "reconciliation" ? (
         <ReconciliationScreen onBack={() => setCurrentScreen(parentScreen)} />
+      ) : currentScreen === "screening" ? (
+        <ScreeningScreen onBack={() => setCurrentScreen(parentScreen)} />
       ) : currentScreen === "history" ? (
         parentScreen === "import" ? (
           selectedULD && (
