@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plane, Clock, MapPin, Package, RefreshCw, Loader2 } from "lucide-react"
 import MenuDrawer from "./menu-drawer"
 import ScreeningDetailScreen from "./screening-detail-screen"
@@ -53,13 +53,62 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
   const [loading] = useState(false)
   const [flights] = useState<ScreeningFlight[]>(SCREENING_FLIGHTS)
   const [selectedFlight, setSelectedFlight] = useState<ScreeningFlight | null>(null)
+  const [flightCounts, setFlightCounts] = useState<Record<string, number>>({})
+
+  // Load saved counts from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const counts: Record<string, number> = {}
+      SCREENING_FLIGHTS.forEach((flight) => {
+        const saved = localStorage.getItem(`screening-${flight.flightNumber}`)
+        if (saved) {
+          try {
+            const data = JSON.parse(saved)
+            counts[flight.flightNumber] = data.noOfShipments ?? 0
+          } catch {
+            counts[flight.flightNumber] = 0
+          }
+        } else {
+          counts[flight.flightNumber] = 0
+        }
+      })
+      setFlightCounts(counts)
+    }
+  }, [])
+
+  // Refresh counts when returning from detail screen
+  const handleFlightSelect = (flight: ScreeningFlight) => {
+    setSelectedFlight(flight)
+  }
+
+  const handleBack = () => {
+    setSelectedFlight(null)
+    // Reload counts from localStorage
+    if (typeof window !== "undefined") {
+      const counts: Record<string, number> = {}
+      SCREENING_FLIGHTS.forEach((flight) => {
+        const saved = localStorage.getItem(`screening-${flight.flightNumber}`)
+        if (saved) {
+          try {
+            const data = JSON.parse(saved)
+            counts[flight.flightNumber] = data.noOfShipments ?? 0
+          } catch {
+            counts[flight.flightNumber] = 0
+          }
+        } else {
+          counts[flight.flightNumber] = 0
+        }
+      })
+      setFlightCounts(counts)
+    }
+  }
 
   // If a flight is selected, show the detail screen
   if (selectedFlight) {
     return (
       <ScreeningDetailScreen
         flight={selectedFlight}
-        onBack={() => setSelectedFlight(null)}
+        onBack={handleBack}
       />
     )
   }
@@ -129,7 +178,8 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
                 <ScreeningFlightRow 
                   key={index} 
                   flight={flight}
-                  onClick={() => setSelectedFlight(flight)}
+                  actualCount={flightCounts[flight.flightNumber] ?? 0}
+                  onClick={() => handleFlightSelect(flight)}
                 />
               ))
             )}
@@ -142,10 +192,13 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
 
 interface ScreeningFlightRowProps {
   flight: ScreeningFlight
+  actualCount: number
   onClick: () => void
 }
 
-function ScreeningFlightRow({ flight, onClick }: ScreeningFlightRowProps) {
+function ScreeningFlightRow({ flight, actualCount, onClick }: ScreeningFlightRowProps) {
+  const defaultCount = flight.defaultScreened?.noOfShipments ?? 0
+  
   return (
     <button
       onClick={onClick}
@@ -155,7 +208,7 @@ function ScreeningFlightRow({ flight, onClick }: ScreeningFlightRowProps) {
       <div className="text-center text-gray-700">{flight.etd}</div>
       <div className="text-center text-gray-700">{flight.destination}</div>
       <div className="relative flex items-center justify-center pl-8">
-        <span className="font-medium text-gray-900">{flight.shipmentCount}</span>
+        <span className="font-medium text-gray-900">{actualCount}/{defaultCount}</span>
         <svg
           className="h-5 w-5 text-gray-400 group-hover:text-[#D71A21] transition-colors ml-1"
           fill="none"
