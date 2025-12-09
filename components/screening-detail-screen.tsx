@@ -24,7 +24,7 @@ interface ScreeningDetailScreenProps {
 }
 
 type ScreeningData = {
-  noOfShipments: number
+  noOfShipments: number | null
   noOfPcs: string
   grWeight: string
   maBase: number
@@ -39,7 +39,7 @@ export default function ScreeningDetailScreen({ flight, onBack }: ScreeningDetai
   // Load saved data or use defaults
   const [data, setData] = useState<ScreeningData>(() => {
     const defaultData = {
-      noOfShipments: 0, // Empty, will show as placeholder
+      noOfShipments: null, // Empty, will show as placeholder
       noOfPcs: "", // Empty, will show as placeholder
       grWeight: String(flight.defaultScreened?.grWeight || 0), // Pre-filled with actual value
       maBase: flight.defaultUnits?.maBase || 0,
@@ -55,6 +55,7 @@ export default function ScreeningDetailScreen({ flight, onBack }: ScreeningDetai
         // If grWeight is empty in saved data, use default value
         return {
           ...savedData,
+          noOfShipments: savedData.noOfShipments ?? null,
           grWeight: savedData.grWeight || String(flight.defaultScreened?.grWeight || 0),
           maBase: savedData.maBase ?? flight.defaultUnits?.maBase ?? 0,
           lBase: savedData.lBase ?? flight.defaultUnits?.lBase ?? 0,
@@ -74,14 +75,14 @@ export default function ScreeningDetailScreen({ flight, onBack }: ScreeningDetai
     }
   }, [data, storageKey])
 
-  const handleFieldChange = (field: keyof ScreeningData, value: string | number) => {
+  const handleFieldChange = (field: keyof ScreeningData, value: string | number | null) => {
     setData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleShipmentsChange = (delta: number) => {
     setData((prev) => ({
       ...prev,
-      noOfShipments: Math.max(0, prev.noOfShipments + delta),
+      noOfShipments: Math.max(0, (prev.noOfShipments || 0) + delta),
     }))
   }
 
@@ -157,11 +158,11 @@ export default function ScreeningDetailScreen({ flight, onBack }: ScreeningDetai
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={data.noOfShipments === 0 ? "" : String(data.noOfShipments)}
+                  value={data.noOfShipments !== null && data.noOfShipments !== undefined ? String(data.noOfShipments) : ""}
                   onChange={(e) => {
                     const val = e.target.value
                     if (val === "") {
-                      handleFieldChange("noOfShipments", 0)
+                      handleFieldChange("noOfShipments", null)
                     } else {
                       const n = Number.parseInt(val, 10)
                       if (Number.isFinite(n) && n >= 0) {
