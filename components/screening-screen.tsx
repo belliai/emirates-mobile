@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Shield, RefreshCw } from "lucide-react"
+import { Plane, Clock, MapPin, Package, RefreshCw, Loader2 } from "lucide-react"
 import MenuDrawer from "./menu-drawer"
 
 interface ScreeningScreenProps {
@@ -9,8 +9,38 @@ interface ScreeningScreenProps {
   onNavigate: (screen: "landing" | "import" | "export" | "loadPlan" | "newULD" | "dropStatus" | "inductionStatus" | "reconciliation" | "screening") => void
 }
 
+type ScreeningFlight = {
+  flightNumber: string
+  destination: string
+  etd: string
+  shipmentCount: number
+}
+
+const SCREENING_FLIGHTS: ScreeningFlight[] = [
+  { flightNumber: "EK0213", destination: "MIA-BOG", etd: "02:15", shipmentCount: 0 },
+  { flightNumber: "EK0231", destination: "IAD", etd: "02:20", shipmentCount: 0 },
+  { flightNumber: "EK0243", destination: "YUL", etd: "02:30", shipmentCount: 0 },
+  { flightNumber: "EK0221", destination: "DFW", etd: "02:40", shipmentCount: 0 },
+  { flightNumber: "EK0203", destination: "JFK", etd: "02:50", shipmentCount: 0 },
+  { flightNumber: "EK0241", destination: "YYZ", etd: "03:30", shipmentCount: 0 },
+  { flightNumber: "EK0237", destination: "BOS", etd: "08:20", shipmentCount: 2 },
+  { flightNumber: "EK0201", destination: "JFK", etd: "08:30", shipmentCount: 5 },
+  { flightNumber: "EK0215", destination: "LAX", etd: "08:55", shipmentCount: 0 },
+  { flightNumber: "EK0225", destination: "SFO", etd: "09:10", shipmentCount: 2 },
+  { flightNumber: "EK0205", destination: "JFK", etd: "09:30", shipmentCount: 1 },
+  { flightNumber: "EK0211", destination: "IAH", etd: "09:30", shipmentCount: 3 },
+  { flightNumber: "EK0235", destination: "ORD", etd: "09:55", shipmentCount: 2 },
+  { flightNumber: "EK0229", destination: "SEA", etd: "09:55", shipmentCount: 0 },
+  { flightNumber: "EK0209", destination: "EWR", etd: "10:50", shipmentCount: 1 },
+  { flightNumber: "EK0957", destination: "BEY", etd: "07:35", shipmentCount: 0 },
+  { flightNumber: "EK0943", destination: "BGW", etd: "12:40", shipmentCount: 0 },
+  { flightNumber: "EK0953", destination: "BEY", etd: "15:10", shipmentCount: 0 },
+]
+
 export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [loading] = useState(false)
+  const [flights] = useState<ScreeningFlight[]>(SCREENING_FLIGHTS)
 
   return (
     <div className="min-h-screen bg-white">
@@ -44,20 +74,73 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
 
       {/* Banner */}
       <div className="bg-[#D71A21] px-1 py-1">
-        <div className="text-center text-white text-sm font-semibold">Screening</div>
+        <div className="grid grid-cols-4 gap-1">
+          <div className="flex justify-center">
+            <Plane className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="flex justify-center">
+            <Clock className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="flex justify-center">
+            <MapPin className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="flex justify-center">
+            <Package className="h-3.5 w-3.5 text-white" />
+          </div>
+        </div>
       </div>
 
-      {/* Coming Soon Content */}
-      <div className="flex flex-col items-center justify-center p-8 mt-20">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-          <Shield className="w-12 h-12 text-gray-400" />
+      {/* Content */}
+      <main className="px-1.5 pb-20">
+        <div className="bg-white overflow-hidden">
+          {/* Table Rows */}
+          <div className="divide-y divide-gray-200">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Loading data...</span>
+              </div>
+            ) : flights.length === 0 ? (
+              <div className="px-1.5 py-3 text-center text-gray-500 text-sm">No screening data available</div>
+            ) : (
+              flights.map((flight, index) => (
+                <ScreeningFlightRow 
+                  key={index} 
+                  flight={flight}
+                />
+              ))
+            )}
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon</h2>
-        <p className="text-center text-gray-500 max-w-sm">
-          The Screening feature is currently under development and will be available soon.
-        </p>
-      </div>
+      </main>
     </div>
+  )
+}
+
+interface ScreeningFlightRowProps {
+  flight: ScreeningFlight
+}
+
+function ScreeningFlightRow({ flight }: ScreeningFlightRowProps) {
+  return (
+    <button
+      className="grid grid-cols-4 gap-1 px-1.5 py-1.5 text-sm hover:bg-gray-50 transition-colors w-full text-left group"
+    >
+      <div className="text-center font-semibold text-gray-900">{flight.flightNumber}</div>
+      <div className="text-center text-gray-700">{flight.etd}</div>
+      <div className="text-center text-gray-700">{flight.destination}</div>
+      <div className="relative flex items-center justify-center pl-8">
+        <span className="font-medium text-gray-900">{flight.shipmentCount}</span>
+        <svg
+          className="h-5 w-5 text-gray-400 group-hover:text-[#D71A21] transition-colors ml-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </button>
   )
 }
 
