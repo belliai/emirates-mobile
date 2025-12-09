@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Plane, Clock, MapPin, Package, RefreshCw, Loader2 } from "lucide-react"
 import MenuDrawer from "./menu-drawer"
+import ScreeningDetailScreen from "./screening-detail-screen"
 
 interface ScreeningScreenProps {
   onBack: () => void
@@ -14,33 +15,54 @@ type ScreeningFlight = {
   destination: string
   etd: string
   shipmentCount: number
+  defaultScreened?: {
+    noOfShipments: number
+    noOfPcs: number
+    grWeight: number
+  }
+  defaultUnits?: {
+    maBase: number
+    lBase: number
+    kBase: number
+  }
 }
 
 const SCREENING_FLIGHTS: ScreeningFlight[] = [
-  { flightNumber: "EK0213", destination: "MIA-BOG", etd: "02:15", shipmentCount: 0 },
-  { flightNumber: "EK0231", destination: "IAD", etd: "02:20", shipmentCount: 0 },
-  { flightNumber: "EK0243", destination: "YUL", etd: "02:30", shipmentCount: 0 },
-  { flightNumber: "EK0221", destination: "DFW", etd: "02:40", shipmentCount: 0 },
-  { flightNumber: "EK0203", destination: "JFK", etd: "02:50", shipmentCount: 0 },
-  { flightNumber: "EK0241", destination: "YYZ", etd: "03:30", shipmentCount: 0 },
-  { flightNumber: "EK0237", destination: "BOS", etd: "08:20", shipmentCount: 2 },
-  { flightNumber: "EK0201", destination: "JFK", etd: "08:30", shipmentCount: 5 },
-  { flightNumber: "EK0215", destination: "LAX", etd: "08:55", shipmentCount: 0 },
-  { flightNumber: "EK0225", destination: "SFO", etd: "09:10", shipmentCount: 2 },
-  { flightNumber: "EK0205", destination: "JFK", etd: "09:30", shipmentCount: 1 },
-  { flightNumber: "EK0211", destination: "IAH", etd: "09:30", shipmentCount: 3 },
-  { flightNumber: "EK0235", destination: "ORD", etd: "09:55", shipmentCount: 2 },
-  { flightNumber: "EK0229", destination: "SEA", etd: "09:55", shipmentCount: 0 },
-  { flightNumber: "EK0209", destination: "EWR", etd: "10:50", shipmentCount: 1 },
-  { flightNumber: "EK0957", destination: "BEY", etd: "07:35", shipmentCount: 0 },
-  { flightNumber: "EK0943", destination: "BGW", etd: "12:40", shipmentCount: 0 },
-  { flightNumber: "EK0953", destination: "BEY", etd: "15:10", shipmentCount: 0 },
+  { flightNumber: "EK0213", destination: "MIA-BOG", etd: "02:15", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 1, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0231", destination: "IAD", etd: "02:20", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 5, grWeight: 1285 }, defaultUnits: { maBase: 1, lBase: 1, kBase: 0 } },
+  { flightNumber: "EK0243", destination: "YUL", etd: "02:30", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0221", destination: "DFW", etd: "02:40", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0203", destination: "JFK", etd: "02:50", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0241", destination: "YYZ", etd: "03:30", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0237", destination: "BOS", etd: "08:20", shipmentCount: 2, defaultScreened: { noOfShipments: 2, noOfPcs: 822, grWeight: 9242 }, defaultUnits: { maBase: 4, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0201", destination: "JFK", etd: "08:30", shipmentCount: 5, defaultScreened: { noOfShipments: 5, noOfPcs: 120, grWeight: 1230 }, defaultUnits: { maBase: 4, lBase: 1, kBase: 0 } },
+  { flightNumber: "EK0215", destination: "LAX", etd: "08:55", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 4, kBase: 0 } },
+  { flightNumber: "EK0225", destination: "SFO", etd: "09:10", shipmentCount: 2, defaultScreened: { noOfShipments: 2, noOfPcs: 11, grWeight: 289 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 1 } },
+  { flightNumber: "EK0205", destination: "JFK", etd: "09:30", shipmentCount: 1, defaultScreened: { noOfShipments: 1, noOfPcs: 45, grWeight: 1300 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 2 } },
+  { flightNumber: "EK0211", destination: "IAH", etd: "09:30", shipmentCount: 3, defaultScreened: { noOfShipments: 3, noOfPcs: 4, grWeight: 22 }, defaultUnits: { maBase: 1, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0235", destination: "ORD", etd: "09:55", shipmentCount: 2, defaultScreened: { noOfShipments: 2, noOfPcs: 360, grWeight: 4205 }, defaultUnits: { maBase: 1, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0229", destination: "SEA", etd: "09:55", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 0, lBase: 0, kBase: 1 } },
+  { flightNumber: "EK0209", destination: "EWR", etd: "10:50", shipmentCount: 1, defaultScreened: { noOfShipments: 1, noOfPcs: 4, grWeight: 160 }, defaultUnits: { maBase: 0, lBase: 1, kBase: 0 } },
+  { flightNumber: "EK0957", destination: "BEY", etd: "07:35", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 8, lBase: 0, kBase: 2 } },
+  { flightNumber: "EK0943", destination: "BGW", etd: "12:40", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 3, lBase: 0, kBase: 0 } },
+  { flightNumber: "EK0953", destination: "BEY", etd: "15:10", shipmentCount: 0, defaultScreened: { noOfShipments: 0, noOfPcs: 0, grWeight: 0 }, defaultUnits: { maBase: 2, lBase: 1, kBase: 1 } },
 ]
 
 export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [loading] = useState(false)
   const [flights] = useState<ScreeningFlight[]>(SCREENING_FLIGHTS)
+  const [selectedFlight, setSelectedFlight] = useState<ScreeningFlight | null>(null)
+
+  // If a flight is selected, show the detail screen
+  if (selectedFlight) {
+    return (
+      <ScreeningDetailScreen
+        flight={selectedFlight}
+        onBack={() => setSelectedFlight(null)}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -107,6 +129,7 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
                 <ScreeningFlightRow 
                   key={index} 
                   flight={flight}
+                  onClick={() => setSelectedFlight(flight)}
                 />
               ))
             )}
@@ -119,11 +142,13 @@ export default function ScreeningScreen({ onBack, onNavigate }: ScreeningScreenP
 
 interface ScreeningFlightRowProps {
   flight: ScreeningFlight
+  onClick: () => void
 }
 
-function ScreeningFlightRow({ flight }: ScreeningFlightRowProps) {
+function ScreeningFlightRow({ flight, onClick }: ScreeningFlightRowProps) {
   return (
     <button
+      onClick={onClick}
       className="grid grid-cols-4 gap-1 px-1.5 py-1.5 text-sm hover:bg-gray-50 transition-colors w-full text-left group"
     >
       <div className="text-center font-semibold text-gray-900">{flight.flightNumber}</div>

@@ -17,7 +17,7 @@ import {
 import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
 import { ULDNumberModal, type ULDEntry } from "./uld-number-modal"
 import BCRModal, { type BCRData, type AWBComment, generateBCRData } from "./bcr-modal"
-import { AWBQuickActionModal } from "./awb-quick-action-modal"
+import { AWBSplitOffloadModal } from "./awb-split-offload-modal"
 
 interface MobileLoadPlanDetailScreenProps {
   loadPlan: LoadPlanDetail
@@ -493,7 +493,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
       )}
 
       {selectedAWB && (
-        <AWBQuickActionModal
+        <AWBSplitOffloadModal
           isOpen={showAWBActionModal}
           onClose={() => {
             setShowAWBActionModal(false)
@@ -502,6 +502,10 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
           awb={selectedAWB}
           onMarkLoaded={handleMarkLoaded}
           onMarkOffload={handleMarkOffload}
+          onConfirmSplit={(splitGroups) => {
+            // TODO: Handle split logic
+            console.log("Split groups:", splitGroups)
+          }}
         />
       )}
     </div>

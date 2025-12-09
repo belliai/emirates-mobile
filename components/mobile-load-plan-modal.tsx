@@ -9,7 +9,7 @@ import { useLoadPlanLogs } from "@/lib/load-plan-log-context"
 import { ULDNumberModal } from "./uld-number-modal"
 import { parseULDSection, formatULDSection, formatULDSectionFromCheckedEntries } from "@/lib/uld-parser"
 import type { ULDEntry } from "./uld-number-modal"
-import { AWBQuickActionModal } from "./awb-quick-action-modal"
+import { AWBSplitOffloadModal } from "./awb-split-offload-modal"
 
 type AWBAssignment = {
   awbNo: string
@@ -1004,7 +1004,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
 
       {/* AWB Quick Action Modal */}
       {selectedAWBForQuickAction && (
-        <AWBQuickActionModal
+        <AWBSplitOffloadModal
           isOpen={showQuickActionModal}
           onClose={() => {
             setShowQuickActionModal(false)
@@ -1013,6 +1013,10 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
           awb={selectedAWBForQuickAction.awb}
           onMarkLoaded={handleMarkAWBLoaded}
           onMarkOffload={handleMarkAWBOffload}
+          onConfirmSplit={(splitGroups) => {
+            // TODO: Handle split logic
+            console.log("Split groups:", splitGroups)
+          }}
         />
       )}
     </div>
