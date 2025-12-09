@@ -229,7 +229,7 @@ function AppContent() {
       ) : currentScreen === "reconciliation" ? (
         <ReconciliationScreen onBack={() => setCurrentScreen(parentScreen)} />
       ) : currentScreen === "screening" ? (
-        <ScreeningScreen onBack={() => setCurrentScreen(parentScreen)} />
+        <ScreeningScreen onBack={() => setCurrentScreen(parentScreen)} onNavigate={handleNavigate} />
       ) : currentScreen === "history" ? (
         parentScreen === "import" ? (
           selectedULD && (
