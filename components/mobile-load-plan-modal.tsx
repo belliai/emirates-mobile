@@ -332,6 +332,8 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                     {/* Regular Sections - AWBs first, then ULD row AFTER (matching markdown structure) */}
                     {regularSections.map((uldSection, uldSectionIndex) => {
                       const actualUldSectionIndex = sector.uldSections.indexOf(uldSection)
+                      // Check if ULD type is BULK - BULK ULD sections can't open ULD Numbers modal, but AWB Actions is allowed
+                      const isBulkULD = uldSection.uld ? uldSection.uld.toUpperCase().includes("BULK") : false
                       return (
                         <React.Fragment key={uldSectionIndex}>
                           {/* AWBs first - render all AWBs in this section */}
@@ -357,11 +359,16 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                   isHovered={isHovered}
                                   isReadOnly={isReadOnly}
                                   assignmentUld={assignmentUld}
+                                  isBulkULD={isBulkULD}
                                   onLeftClick={() => {
+                                    // AWB Actions modal is allowed for all ULD types including BULK
                                     setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                     setShowQuickActionModal(true)
                                   }}
-                                  onRightClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
+                                  onRightClick={() => {
+                                    // Assignment modal is allowed for all ULD types including BULK
+                                    handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)
+                                  }}
                                   onMouseEnter={() => assignmentUld && setHoveredUld(assignmentUld)}
                                   onMouseLeave={() => setHoveredUld(null)}
                                 />
@@ -412,14 +419,18 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                             
                             return (
                               <div 
-                                className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] cursor-pointer hover:bg-gray-50 transition-colors"
+                                className={`flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] ${!isBulkULD ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors`}
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  // Don't open ULD Numbers modal for BULK ULD types
+                                  if (isBulkULD) return
                                   setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                   setShowULDModal(true)
                                 }}
                                 onTouchStart={(e) => {
                                   e.stopPropagation()
+                                  // Don't open ULD Numbers modal for BULK ULD types
+                                  if (isBulkULD) return
                                   setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                   setShowULDModal(true)
                                 }}
@@ -437,12 +448,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     </div>
                                   )}
                                   <div 
-                                    className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
-                                    onClick={isReadOnly ? () => {
+                                    className={`flex-1 ${isReadOnly && !isBulkULD ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                    onClick={isReadOnly && !isBulkULD ? () => {
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
                                     } : undefined}
-                                    onTouchStart={isReadOnly ? (e) => {
+                                    onTouchStart={isReadOnly && !isBulkULD ? (e) => {
                                       e.stopPropagation()
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
@@ -696,6 +707,8 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                     {/* Regular Sections - AWBs first, then ULD row AFTER (matching markdown structure) */}
                     {regularSections.map((uldSection, uldSectionIndex) => {
                       const actualUldSectionIndex = sector.uldSections.indexOf(uldSection)
+                      // Check if ULD type is BULK - BULK ULD sections can't open ULD Numbers modal, but AWB Actions is allowed
+                      const isBulkULD = uldSection.uld ? uldSection.uld.toUpperCase().includes("BULK") : false
                       return (
                         <React.Fragment key={uldSectionIndex}>
                           {/* AWBs first - render all AWBs in this section */}
@@ -721,11 +734,16 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                   isHovered={isHovered}
                                   isReadOnly={isReadOnly}
                                   assignmentUld={assignmentUld}
+                                  isBulkULD={isBulkULD}
                                   onLeftClick={() => {
+                                    // AWB Actions modal is allowed for all ULD types including BULK
                                     setSelectedAWBForQuickAction({ awb, sectorIndex, uldSectionIndex: actualUldSectionIndex, awbIndex })
                                     setShowQuickActionModal(true)
                                   }}
-                                  onRightClick={() => handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)}
+                                  onRightClick={() => {
+                                    // Assignment modal is allowed for all ULD types including BULK
+                                    handleAWBRowClick(awb, sectorIndex, actualUldSectionIndex, awbIndex, assignment)
+                                  }}
                                   onMouseEnter={() => assignmentUld && setHoveredUld(assignmentUld)}
                                   onMouseLeave={() => setHoveredUld(null)}
                                 />
@@ -776,14 +794,18 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                             
                             return (
                               <div 
-                                className="flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] cursor-pointer hover:bg-gray-50 transition-colors"
+                                className={`flex text-xs font-semibold text-gray-900 text-center border-b border-gray-200 min-w-[800px] ${!isBulkULD ? "cursor-pointer hover:bg-gray-50" : ""} transition-colors`}
                                 onClick={(e) => {
                                   e.stopPropagation()
+                                  // Don't open ULD Numbers modal for BULK ULD types
+                                  if (isBulkULD) return
                                   setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                   setShowULDModal(true)
                                 }}
                                 onTouchStart={(e) => {
                                   e.stopPropagation()
+                                  // Don't open ULD Numbers modal for BULK ULD types
+                                  if (isBulkULD) return
                                   setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                   setShowULDModal(true)
                                 }}
@@ -801,12 +823,12 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     </div>
                                   )}
                                   <div 
-                                    className={`flex-1 ${isReadOnly ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
-                                    onClick={isReadOnly ? () => {
+                                    className={`flex-1 ${isReadOnly && !isBulkULD ? "cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors" : ""}`}
+                                    onClick={isReadOnly && !isBulkULD ? () => {
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
                                     } : undefined}
-                                    onTouchStart={isReadOnly ? (e) => {
+                                    onTouchStart={isReadOnly && !isBulkULD ? (e) => {
                                       e.stopPropagation()
                                       setSelectedULDSection({ sectorIndex, uldSectionIndex: actualUldSectionIndex, uld: uldSection.uld })
                                       setShowULDModal(true)
@@ -1031,6 +1053,7 @@ interface AWBSplitRowProps {
   isHovered: boolean
   isReadOnly: boolean
   assignmentUld: string | null
+  isBulkULD?: boolean // Flag to disable AWB Actions modal for BULK ULD types
   onLeftClick: () => void
   onRightClick: () => void
   onMouseEnter: () => void
@@ -1044,6 +1067,7 @@ function AWBSplitRow({
   isHovered,
   isReadOnly,
   assignmentUld,
+  isBulkULD = false,
   onLeftClick,
   onRightClick,
   onMouseEnter,

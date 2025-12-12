@@ -83,6 +83,10 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
     uldSection: string,
   ) => {
     e.stopPropagation() // Prevent toggling the ULD section
+    // Don't open ULD Numbers modal for BULK ULD types - BULK is view-only
+    if (uldSection && uldSection.toUpperCase().includes("BULK")) {
+      return
+    }
     const uldKey = `${sectorIndex}-${uldSectionIndex}`
     const existingEntries = uldEntriesMap[uldKey] || []
     setSelectedULDSection({
@@ -105,8 +109,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
     }
   }
 
-  const handleOpenAWBAction = (e: React.MouseEvent, awb: AWBRow) => {
+  const handleOpenAWBAction = (e: React.MouseEvent, awb: AWBRow, uldType: string) => {
     e.stopPropagation()
+    // AWB Actions modal is allowed for all ULD types including BULK
     setSelectedAWB(awb)
     setShowAWBActionModal(true)
   }
@@ -351,8 +356,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                       <div className="text-sm font-semibold text-gray-900">{awb.pcs} pcs</div>
                                       <div className="text-xs text-gray-500">{awb.wgt} kg</div>
                                     </div>
+                                    {/* AWB actions button - allowed for all ULD types including BULK */}
                                     <button
-                                      onClick={(e) => handleOpenAWBAction(e, awb)}
+                                      onClick={(e) => handleOpenAWBAction(e, awb, uldSection.uld || "")}
                                       className="p-2 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-colors"
                                       aria-label="AWB actions"
                                     >
