@@ -70,26 +70,15 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
         throw new Error('Supabase client not available. Check environment variables.')
       }
       
-      // If staff is logged in, fetch assigned flights first
-      let assignedFlightNumbers: string[] = []
-      if (staff && displayName) {
-        console.log(`[LoadPlanScreen] Staff logged in: ${displayName}, fetching assigned flights...`)
-        const flights = await fetchAssignedFlights()
-        assignedFlightNumbers = flights.map(f => {
-          const flightNo = f.flight_no
-          return flightNo.startsWith("EK") ? flightNo : `EK${flightNo}`
-        })
-        console.log(`[LoadPlanScreen] Found ${assignedFlightNumbers.length} assigned flights:`, assignedFlightNumbers)
-      }
-
-      // Build query
+      // Build query - filter by assigned_to if staff is logged in
       let query = supabase
         .from('load_plans')
         .select('*')
       
-      // Filter by assigned flights if staff is logged in
-      if (staff && assignedFlightNumbers.length > 0) {
-        query = query.in('flight_number', assignedFlightNumbers)
+      // If staff is logged in, filter by assigned_to (staff_no)
+      if (staff?.staff_no) {
+        console.log(`[LoadPlanScreen] Staff logged in: ${displayName} (staff_no: ${staff.staff_no}), filtering by assigned_to...`)
+        query = query.eq('assigned_to', staff.staff_no)
       }
       
       query = query
@@ -108,7 +97,7 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
       console.log(`[LoadPlanScreen] Loaded ${plans.length} load plans`)
       
       // Show helpful message if staff is logged in but no flights assigned
-      if (staff && assignedFlightNumbers.length === 0) {
+      if (staff?.staff_no && plans.length === 0) {
         console.log('[LoadPlanScreen] No flights assigned to this staff member')
       }
     } catch (err: any) {
