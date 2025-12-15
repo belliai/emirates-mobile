@@ -2,7 +2,7 @@
 
 import { X, ArrowLeft } from "lucide-react"
 import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import React, { useState as useStateHook } from "react"
 import AWBAssignmentModal, { LoadedStatusModal, type AWBAssignmentData } from "./awb-assignment-modal"
 import { useLoadPlanLogs } from "@/lib/load-plan-log-context"
@@ -10,6 +10,7 @@ import { ULDNumberModal } from "./uld-number-modal"
 import { parseULDSection, formatULDSection, formatULDSectionFromCheckedEntries } from "@/lib/uld-parser"
 import type { ULDEntry } from "./uld-number-modal"
 import { AWBSplitOffloadModal } from "./awb-split-offload-modal"
+import { getULDEntriesFromSupabase, updateULDEntriesInSupabase, getULDEntriesFromStorage } from "@/lib/uld-storage"
 
 type AWBAssignment = {
   awbNo: string
@@ -36,36 +37,43 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
   const [awbAssignments, setAwbAssignments] = useState<Map<string, AWBAssignment>>(new Map())
   const [hoveredUld, setHoveredUld] = useState<string | null>(null)
   
-  // ULD numbers state management
+  // ULD numbers state management - initialize from localStorage (for immediate display)
   const [uldNumbers, setUldNumbers] = useState<Map<string, string[]>>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`uld-numbers-${loadPlan.flight}`)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          return new Map(Object.entries(parsed))
-        } catch (e) {
-          return new Map()
-        }
-      }
-    }
-    return new Map()
+    const entries = getULDEntriesFromStorage(loadPlan.flight, loadPlan.sectors)
+    const numbersMap = new Map<string, string[]>()
+    entries.forEach((entryList, key) => {
+      numbersMap.set(key, entryList.map(e => e.number))
+    })
+    return numbersMap
   })
+  
   // ULD entries state management (includes checked states and types)
   const [uldEntries, setUldEntries] = useState<Map<string, ULDEntry[]>>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(`uld-entries-${loadPlan.flight}`)
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          return new Map(Object.entries(parsed))
-        } catch (e) {
-          return new Map()
+    return getULDEntriesFromStorage(loadPlan.flight, loadPlan.sectors)
+  })
+  
+  // Fetch ULD entries from Supabase on mount (for cross-device sync)
+  useEffect(() => {
+    const fetchULDEntriesFromDB = async () => {
+      try {
+        const entries = await getULDEntriesFromSupabase(loadPlan.flight, loadPlan.sectors)
+        if (entries.size > 0) {
+          setUldEntries(entries)
+          // Also update numbers map
+          const numbersMap = new Map<string, string[]>()
+          entries.forEach((entryList, key) => {
+            numbersMap.set(key, entryList.map(e => e.number))
+          })
+          setUldNumbers(numbersMap)
+          console.log(`[MobileLoadPlanModal] Loaded ${entries.size} ULD sections from Supabase for ${loadPlan.flight}`)
         }
+      } catch (error) {
+        console.error(`[MobileLoadPlanModal] Error fetching ULD entries from Supabase:`, error)
       }
     }
-    return new Map()
-  })
+    
+    fetchULDEntriesFromDB()
+  }, [loadPlan.flight])
   const [showULDModal, setShowULDModal] = useState(false)
   const [selectedULDSection, setSelectedULDSection] = useState<{
     sectorIndex: number
@@ -82,26 +90,24 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
 
   const updateULDNumbers = (sectorIndex: number, uldSectionIndex: number, numbers: string[], entries: ULDEntry[]) => {
     const key = `${sectorIndex}-${uldSectionIndex}`
+    
+    // Update local state immediately
     setUldNumbers((prev) => {
       const updated = new Map(prev)
       updated.set(key, numbers)
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        const toStore = Object.fromEntries(updated)
-        localStorage.setItem(`uld-numbers-${loadPlan.flight}`, JSON.stringify(toStore))
-      }
       return updated
     })
     setUldEntries((prev) => {
       const updated = new Map(prev)
       updated.set(key, entries)
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        const toStore = Object.fromEntries(updated)
-        localStorage.setItem(`uld-entries-${loadPlan.flight}`, JSON.stringify(toStore))
-      }
       return updated
     })
+    
+    // Sync to Supabase in background
+    updateULDEntriesInSupabase(loadPlan.flight, sectorIndex, uldSectionIndex, entries)
+      .catch(error => {
+        console.error(`[MobileLoadPlanModal] Error saving to Supabase:`, error)
+      })
   }
 
   if (!isOpen) return null

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   ChevronDown,
@@ -18,6 +18,7 @@ import type { LoadPlanDetail, AWBRow } from "./load-plan-types"
 import { ULDNumberModal, type ULDEntry } from "./uld-number-modal"
 import BCRModal, { type BCRData, type AWBComment, generateBCRData } from "./bcr-modal"
 import { AWBSplitOffloadModal } from "./awb-split-offload-modal"
+import { getULDEntriesFromSupabase, updateULDEntriesInSupabase, getULDEntriesFromStorage } from "@/lib/uld-storage"
 
 interface MobileLoadPlanDetailScreenProps {
   loadPlan: LoadPlanDetail
@@ -41,7 +42,29 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
     initialNumbers: string[]
     initialEntries?: ULDEntry[]
   } | null>(null)
-  const [uldEntriesMap, setUldEntriesMap] = useState<Record<string, ULDEntry[]>>({})
+  
+  // Initialize ULD entries from localStorage (for immediate display)
+  const [uldEntriesMap, setUldEntriesMap] = useState<Record<string, ULDEntry[]>>(() => {
+    const entries = getULDEntriesFromStorage(loadPlan.flight, loadPlan.sectors)
+    return Object.fromEntries(entries)
+  })
+
+  // Fetch ULD entries from Supabase on mount (for cross-device sync)
+  useEffect(() => {
+    const fetchULDEntriesFromDB = async () => {
+      try {
+        const entries = await getULDEntriesFromSupabase(loadPlan.flight, loadPlan.sectors)
+        if (entries.size > 0) {
+          setUldEntriesMap(Object.fromEntries(entries))
+          console.log(`[MobileLoadPlanDetail] Loaded ${entries.size} ULD sections from Supabase for ${loadPlan.flight}`)
+        }
+      } catch (error) {
+        console.error(`[MobileLoadPlanDetail] Error fetching ULD entries from Supabase:`, error)
+      }
+    }
+    
+    fetchULDEntriesFromDB()
+  }, [loadPlan.flight])
 
   const [showBCRModal, setShowBCRModal] = useState(false)
   const [bcrData, setBcrData] = useState<BCRData | null>(null)
@@ -102,10 +125,22 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
   const handleSaveULDEntries = (numbers: string[], entries: ULDEntry[]) => {
     if (selectedULDSection) {
       const uldKey = `${selectedULDSection.sectorIndex}-${selectedULDSection.uldSectionIndex}`
+      
+      // Update local state immediately
       setUldEntriesMap((prev) => ({
         ...prev,
         [uldKey]: entries,
       }))
+      
+      // Sync to Supabase in background
+      updateULDEntriesInSupabase(
+        loadPlan.flight,
+        selectedULDSection.sectorIndex,
+        selectedULDSection.uldSectionIndex,
+        entries
+      ).catch(error => {
+        console.error(`[MobileLoadPlanDetail] Error saving to Supabase:`, error)
+      })
     }
   }
 
