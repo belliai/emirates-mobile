@@ -53,13 +53,10 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
           return
         }
         
-        // Get flight numbers with EK prefix
-        const flightNumbers = assignedFlights.map(f => {
-          const flightNo = f.flightNo // Use camelCase (TypeScript type)
-          return flightNo && flightNo.startsWith("EK") ? flightNo : `EK${flightNo || ""}`
-        })
+        // Get flight numbers from assigned flights (already has EK prefix from Supabase)
+        const flightNumbers = assignedFlights.map(f => f.flight_number)
         
-        console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights`)
+        console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights:`, flightNumbers)
         
         // Fetch load plans for assigned flights only
         const supabase = getSupabaseClient()
@@ -130,7 +127,7 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
 
   useEffect(() => {
     fetchLoadPlans()
-  }, [])
+  }, [staff?.staff_no])
 
   useEffect(() => {
     const handleScroll = () => {

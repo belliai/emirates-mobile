@@ -296,8 +296,6 @@ export function generateMobileNumber(staffNo: number): string {
   return `+971 ${prefix} ${part1} ${part2}`
 }
 
-// Re-export BUPAllocation from load-plans-supabase (kept for backwards compatibility)
-export type { BUPAllocation } from "./load-plans-supabase"
 
 /**
  * Assigned load plan type - represents a load plan assigned to a staff member
