@@ -302,12 +302,12 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                             {uldSection.awbs.length} AWB{uldSection.awbs.length !== 1 ? "s" : ""} • {totals.pcs} pcs •{" "}
                             {totals.wgt} kg
                           </div>
-                          {savedEntries.length > 0 && (
+                          {savedEntries.filter(e => e.checked).length > 0 && (
                             <div className="text-xs text-[#D71A21] font-mono mt-0.5">
                               {savedEntries
-                                .filter((e) => e.number)
-                                .map((e) => `${e.type}${e.number}`)
-                                .join(", ") || "No numbers"}
+                                .filter((e) => e.checked)
+                                .map((e) => e.number.trim() !== "" ? `${e.type}${e.number.trim()}EK` : e.type)
+                                .join(", ")}
                             </div>
                           )}
                         </div>

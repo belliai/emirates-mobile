@@ -417,8 +417,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           {uldSection.uld && (() => {
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
-                            const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
-                            const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                            const checkedEntries = entriesForSection.filter(e => e.checked)
+                            const hasCheckedEntries = checkedEntries.length > 0
+                            const displayNumbers = checkedEntries
+                              .map(e => e.number.trim() !== "" ? `${e.type}${e.number.trim()}EK` : e.type)
+                              .join(", ")
                             const finalSection = entriesForSection.length > 0 
                               ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
                               : formatULDSection(uldNumbersForSection, uldSection.uld)
@@ -442,7 +445,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                 }}
                               >
                                 <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
-                                  {hasULDNumbers && (
+                                  {hasCheckedEntries && (
                                     <div className="group relative flex-shrink-0">
                                       <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
                                         {displayNumbers}
@@ -492,8 +495,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {uldSection.uld && (() => {
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
-                                const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
-                                const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                                const checkedEntries = entriesForSection.filter(e => e.checked)
+                                const hasCheckedEntries = checkedEntries.length > 0
+                                const displayNumbers = checkedEntries
+                                  .map(e => e.number.trim() !== "" ? `${e.type}${e.number.trim()}EK` : e.type)
+                                  .join(", ")
                                 const finalSection = entriesForSection.length > 0 
                                   ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
                                   : formatULDSection(uldNumbersForSection, uldSection.uld)
@@ -503,7 +509,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]"
                                   >
                                     <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
-                                      {hasULDNumbers && (
+                                      {hasCheckedEntries && (
                                         <div className="group relative flex-shrink-0">
                                           <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
                                             {displayNumbers}
@@ -792,8 +798,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                           {uldSection.uld && (() => {
                             const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                             const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
-                            const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
-                            const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                            const checkedEntries = entriesForSection.filter(e => e.checked)
+                            const hasCheckedEntries = checkedEntries.length > 0
+                            const displayNumbers = checkedEntries
+                              .map(e => e.number.trim() !== "" ? `${e.type}${e.number.trim()}EK` : e.type)
+                              .join(", ")
                             const finalSection = entriesForSection.length > 0 
                               ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
                               : formatULDSection(uldNumbersForSection, uldSection.uld)
@@ -817,7 +826,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                 }}
                               >
                                 <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
-                                  {hasULDNumbers && (
+                                  {hasCheckedEntries && (
                                     <div className="group relative flex-shrink-0">
                                       <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
                                         {displayNumbers}
@@ -867,8 +876,11 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {uldSection.uld && (() => {
                                 const uldNumbersForSection = uldNumbers.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
                                 const entriesForSection = uldEntries.get(`${sectorIndex}-${actualUldSectionIndex}`) || []
-                                const hasULDNumbers = uldNumbersForSection.length > 0 && uldNumbersForSection.some(n => n.trim() !== "")
-                                const displayNumbers = uldNumbersForSection.filter(n => n.trim() !== "").join(", ")
+                                const checkedEntries = entriesForSection.filter(e => e.checked)
+                                const hasCheckedEntries = checkedEntries.length > 0
+                                const displayNumbers = checkedEntries
+                                  .map(e => e.number.trim() !== "" ? `${e.type}${e.number.trim()}EK` : e.type)
+                                  .join(", ")
                                 const finalSection = entriesForSection.length > 0 
                                   ? formatULDSectionFromCheckedEntries(entriesForSection, uldSection.uld)
                                   : formatULDSection(uldNumbersForSection, uldSection.uld)
@@ -878,7 +890,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     className="flex text-xs font-semibold text-gray-900 text-center bg-gray-50 border-b border-gray-200 min-w-[800px]"
                                   >
                                     <div className="flex items-center justify-center gap-4 flex-1 px-2 py-1">
-                                      {hasULDNumbers && (
+                                      {hasCheckedEntries && (
                                         <div className="group relative flex-shrink-0">
                                           <div className="text-xs font-normal text-gray-500 max-w-[200px] truncate pr-3 border-r border-gray-200">
                                             {displayNumbers}
