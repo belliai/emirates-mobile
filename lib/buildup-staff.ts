@@ -296,19 +296,77 @@ export function generateMobileNumber(staffNo: number): string {
   return `+971 ${prefix} ${part1} ${part2}`
 }
 
-// Re-export BUPAllocation from load-plans-supabase
+// Re-export BUPAllocation from load-plans-supabase (kept for backwards compatibility)
 export type { BUPAllocation } from "./load-plans-supabase"
 
 /**
- * Get flights assigned to a specific staff member by display name
- * Queries bup_allocations table filtered by staff name
+ * Assigned load plan type - represents a load plan assigned to a staff member
  */
-export async function getAssignedFlights(displayName: string): Promise<import("./load-plans-supabase").BUPAllocation[]> {
-  const { getBupAllocationsFromSupabase } = await import("./load-plans-supabase")
-  const allAllocations = await getBupAllocationsFromSupabase()
-  
-  // Filter by staff display name (case-insensitive)
-  return allAllocations.filter(alloc => 
-    alloc.staff.toLowerCase() === displayName.toLowerCase()
-  )
+export type AssignedLoadPlan = {
+  flight_no: string
+  flight_number: string
+  flight_date: string | null
+  std_time: string | null
+  route_full: string | null
+  route_origin: string | null
+  route_destination: string | null
+  aircraft_type: string | null
+  aircraft_registration: string | null
+  assigned_to: number
+}
+
+/**
+ * Get flights assigned to a specific staff member by staff_no
+ * Queries load_plans table where assigned_to matches the staff's staff_no
+ */
+export async function getAssignedFlights(staffNo: number): Promise<AssignedLoadPlan[]> {
+  try {
+    const supabase = getSupabaseClient()
+    if (!supabase || !isSupabaseConfigured()) {
+      console.log("[BuildupStaff] Supabase not configured, returning empty array")
+      return []
+    }
+
+    console.log(`[BuildupStaff] Fetching assigned flights for staff_no: ${staffNo}`)
+    
+    const { data: loadPlans, error } = await supabase
+      .from("load_plans")
+      .select("flight_number, flight_date, std_time, route_full, route_origin, route_destination, aircraft_type, aircraft_registration, assigned_to")
+      .eq("assigned_to", staffNo)
+      .order("flight_date", { ascending: false })
+      .order("std_time", { ascending: true })
+
+    if (error) {
+      console.error("[BuildupStaff] Error fetching assigned flights:", {
+        code: error.code,
+        message: error.message
+      })
+      return []
+    }
+
+    if (!loadPlans || loadPlans.length === 0) {
+      console.log(`[BuildupStaff] No flights assigned to staff_no: ${staffNo}`)
+      return []
+    }
+
+    // Transform to AssignedLoadPlan format
+    const assigned: AssignedLoadPlan[] = loadPlans.map((plan: any) => ({
+      flight_no: plan.flight_number?.replace(/^EK0?/, "") || "",
+      flight_number: plan.flight_number || "",
+      flight_date: plan.flight_date,
+      std_time: plan.std_time,
+      route_full: plan.route_full,
+      route_origin: plan.route_origin,
+      route_destination: plan.route_destination,
+      aircraft_type: plan.aircraft_type,
+      aircraft_registration: plan.aircraft_registration,
+      assigned_to: plan.assigned_to,
+    }))
+
+    console.log(`[BuildupStaff] Found ${assigned.length} flights assigned to staff_no: ${staffNo}`)
+    return assigned
+  } catch (error) {
+    console.error("[BuildupStaff] Error fetching assigned flights:", error)
+    return []
+  }
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, ReactNode } from "react"
-import { type BuildupStaff, parseStaffName, getAssignedFlights, type BUPAllocation } from "./buildup-staff"
+import { type BuildupStaff, parseStaffName, getAssignedFlights, type AssignedLoadPlan } from "./buildup-staff"
 
 type StaffContextType = {
   // Current logged-in staff
@@ -14,10 +14,10 @@ type StaffContextType = {
   setStaff: (staff: BuildupStaff | null) => void
   // Logout
   logout: () => void
-  // Get assigned flights for current staff
-  fetchAssignedFlights: () => Promise<BUPAllocation[]>
+  // Get assigned flights for current staff (queries load_plans.assigned_to)
+  fetchAssignedFlights: () => Promise<AssignedLoadPlan[]>
   // Cached assigned flights
-  assignedFlights: BUPAllocation[]
+  assignedFlights: AssignedLoadPlan[]
   // Loading state for assigned flights
   isLoadingFlights: boolean
   // Refresh assigned flights
@@ -28,7 +28,7 @@ const StaffContext = createContext<StaffContextType | undefined>(undefined)
 
 export function StaffProvider({ children }: { children: ReactNode }) {
   const [staff, setStaffState] = useState<BuildupStaff | null>(null)
-  const [assignedFlights, setAssignedFlights] = useState<BUPAllocation[]>([])
+  const [assignedFlights, setAssignedFlights] = useState<AssignedLoadPlan[]>([])
   const [isLoadingFlights, setIsLoadingFlights] = useState(false)
 
   // Parse staff name for display
@@ -47,16 +47,16 @@ export function StaffProvider({ children }: { children: ReactNode }) {
     setAssignedFlights([])
   }
 
-  const fetchAssignedFlights = async (): Promise<BUPAllocation[]> => {
-    if (!staff || !displayName) {
+  const fetchAssignedFlights = async (): Promise<AssignedLoadPlan[]> => {
+    if (!staff?.staff_no) {
       console.log("[StaffContext] No staff logged in, returning empty flights")
       return []
     }
 
     setIsLoadingFlights(true)
     try {
-      console.log(`[StaffContext] Fetching assigned flights for ${displayName}`)
-      const flights = await getAssignedFlights(displayName)
+      console.log(`[StaffContext] Fetching assigned flights for staff_no: ${staff.staff_no} (${displayName})`)
+      const flights = await getAssignedFlights(staff.staff_no)
       setAssignedFlights(flights)
       console.log(`[StaffContext] Found ${flights.length} assigned flights`)
       return flights
