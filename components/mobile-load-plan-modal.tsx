@@ -540,6 +540,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {uldSection.awbs.map((awb, awbIndex) => {
                                 const assignmentKey = `${awb.awbNo}-${sectorIndex}-${actualUldSectionIndex}-${awbIndex}`
                                 const assignment = awbAssignments.get(assignmentKey)
+                                // Check if this is additional/revised data (should be red)
+                                const isRampAdditionalData = awb.additional_data === true
+                                const rampTextColor = isRampAdditionalData ? "text-red-600" : "text-gray-900"
                                 return (
                                   <div
                                     key={awbIndex}
@@ -548,7 +551,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     {awbFields.map((field) => (
                                       <div
                                         key={field.key}
-                                        className={`px-2 py-1 flex-shrink-0 ${field.className || ""}`}
+                                        className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${rampTextColor}`}
                                         style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}
                                       >
                                         {awb[field.key] || "-"}
@@ -921,6 +924,9 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                               {uldSection.awbs.map((awb, awbIndex) => {
                                 const assignmentKey = `${awb.awbNo}-${sectorIndex}-${actualUldSectionIndex}-${awbIndex}`
                                 const assignment = awbAssignments.get(assignmentKey)
+                                // Check if this is additional/revised data (should be red)
+                                const isRampAdditionalData = awb.additional_data === true
+                                const rampTextColor = isRampAdditionalData ? "text-red-600" : "text-gray-900"
                                 return (
                                   <div
                                     key={awbIndex}
@@ -929,7 +935,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
                                     {awbFields.map((field) => (
                                       <div
                                         key={field.key}
-                                        className={`px-2 py-1 flex-shrink-0 ${field.className || ""}`}
+                                        className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${rampTextColor}`}
                                         style={{ width: field.key === "manDesc" ? "120px" : field.key === "awbNo" ? "100px" : "60px" }}
                                       >
                                         {awb[field.key] || "-"}
@@ -1095,6 +1101,11 @@ function AWBSplitRow({
   
   const leftFields = awbFields.slice(0, 8) // SER through SHC
   const rightFields = awbFields.slice(8) // MAN.DESC onward
+  
+  // Check if this item is additional/revised data (should be displayed in red)
+  const isAdditionalData = awb.additional_data === true
+  // Base text color: red for additional data, gray for normal
+  const textColorClass = isAdditionalData ? "text-red-600" : "text-gray-900"
 
   return (
     <div
@@ -1109,7 +1120,7 @@ function AWBSplitRow({
       {leftFields.map((field) => (
         <div
           key={field.key}
-          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "left" && isReadOnly ? "bg-blue-50" : ""}`}
+          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${textColorClass} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "left" && isReadOnly ? "bg-blue-50" : ""}`}
           style={{ width: field.key === "awbNo" ? "100px" : "60px" }}
           onMouseEnter={() => isReadOnly && setHoveredSection("left")}
           onMouseLeave={() => setHoveredSection(null)}
@@ -1134,7 +1145,7 @@ function AWBSplitRow({
       {rightFields.map((field) => (
         <div
           key={field.key}
-          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "right" && isReadOnly ? "bg-gray-50" : ""}`}
+          className={`px-2 py-1 flex-shrink-0 ${field.className || ""} ${textColorClass} ${isReadOnly ? "cursor-pointer" : ""} ${hoveredSection === "right" && isReadOnly ? "bg-gray-50" : ""}`}
           style={{ width: field.key === "manDesc" ? "120px" : "60px" }}
           onMouseEnter={() => isReadOnly && setHoveredSection("right")}
           onMouseLeave={() => setHoveredSection(null)}

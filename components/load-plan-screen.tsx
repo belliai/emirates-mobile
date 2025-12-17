@@ -54,7 +54,6 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
   const { staff, displayName, fullName, fetchAssignedFlights, assignedFlights } = useStaff()
 
   // Fetch load plans when component mounts OR when staff changes
-  // This ensures we re-query when user logs in with a staff_no
   useEffect(() => {
     fetchLoadPlans()
   }, [staff?.staff_no])
@@ -78,7 +77,6 @@ export default function LoadPlanScreen({ onBack }: LoadPlanScreenProps) {
         .select('*')
       
       // If staff is logged in, filter by assigned_to (staff_no)
-      // Ensure staff_no is a number for proper int8 comparison
       if (staff?.staff_no) {
         const staffNoInt = typeof staff.staff_no === 'string' ? parseInt(staff.staff_no, 10) : Number(staff.staff_no)
         console.log(`[LoadPlanScreen] Staff logged in: ${displayName} (staff_no: ${staffNoInt}, type: ${typeof staffNoInt}), filtering by assigned_to...`)

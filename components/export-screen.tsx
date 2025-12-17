@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Plane, Clock, MapPin, Package, RefreshCw, Loader2 } from "lucide-react"
 import { getLoadPlansFromSupabase, getLoadPlanDetailFromSupabase, type LoadPlan } from "@/lib/load-plans-supabase"
 import type { LoadPlanDetail } from "./load-plan-types"
@@ -10,6 +10,9 @@ import BottomNav from "./bottom-nav"
 import MenuDrawer from "./menu-drawer"
 import { useStaff } from "@/lib/staff-context"
 import { getSupabaseClient } from "@/lib/supabase"
+
+// Polling interval in milliseconds (30 seconds)
+const POLLING_INTERVAL = 30000
 
 interface ExportScreenProps {
   onLogout: () => void
@@ -30,33 +33,82 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
   const [hasVisitedLogs, setHasVisitedLogs] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const { staff, displayName, fetchAssignedFlights } = useStaff()
 
-  // Fetch load plans list on mount - filtered by staff if logged in
-  const fetchLoadPlans = async () => {
+  // Refs for polling
+  const isMountedRef = useRef(true)
+  const isPollingRef = useRef(false)
+  const isVisibleRef = useRef(true)
+  
+  // Helper to format date
+  function formatDateForDisplay(dateStr: string | null): string {
+    if (!dateStr) return ""
     try {
-      setIsRefreshing(true)
-      setError(null)
+      const date = new Date(dateStr)
+      const day = date.getDate()
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+      const month = monthNames[date.getMonth()]
+      return `${day}${month}`
+    } catch {
+      return dateStr
+    }
+  }
+  
+  // Helper to format time
+  function formatTime(timeStr: string | null): string {
+    if (!timeStr) return ""
+    return timeStr.substring(0, 5)
+  }
+
+  // Fetch load plans list - accepts isPolling param for silent updates
+  const fetchLoadPlans = useCallback(async (isPolling = false) => {
+    // Prevent concurrent fetches
+    if (isPollingRef.current && isPolling) {
+      return
+    }
+
+    try {
+      isPollingRef.current = true
       
-      console.log('[ExportScreen] Fetching load plans list...')
+      // Only show refresh indicator if not polling
+      if (!isPolling) {
+        setIsRefreshing(true)
+        setError(null)
+      }
+      
+      if (isPolling) {
+        console.log('[ExportScreen] Polling for updates...')
+      } else {
+        console.log('[ExportScreen] Fetching load plans list...')
+      }
       
       // If staff is logged in, filter by assigned flights
       if (staff && displayName) {
-        console.log(`[ExportScreen] Staff logged in: ${displayName}, fetching assigned flights...`)
+        if (!isPolling) {
+          console.log(`[ExportScreen] Staff logged in: ${displayName}, fetching assigned flights...`)
+        }
         const assignedFlights = await fetchAssignedFlights()
         
         if (assignedFlights.length === 0) {
-          console.log('[ExportScreen] No flights assigned to this staff member')
-          setLoadPlans([])
-          setLoading(false)
-          setIsRefreshing(false)
+          if (!isPolling) {
+            console.log('[ExportScreen] No flights assigned to this staff member')
+          }
+          if (isMountedRef.current) {
+            setLoadPlans([])
+            setLastUpdated(new Date())
+            setLoading(false)
+            if (!isPolling) setIsRefreshing(false)
+          }
           return
         }
         
         // Get flight numbers from assigned flights (already has EK prefix from Supabase)
         const flightNumbers = assignedFlights.map(f => f.flight_number)
         
-        console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights:`, flightNumbers)
+        if (!isPolling) {
+          console.log(`[ExportScreen] Fetching load plans for ${flightNumbers.length} assigned flights:`, flightNumbers)
+        }
         
         // Fetch load plans for assigned flights only
         const supabase = getSupabaseClient()
@@ -86,48 +138,91 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
           ttlPlnUld: plan.total_planned_uld || "",
         }))
         
-        setLoadPlans(transformedPlans)
-        console.log(`[ExportScreen] Loaded ${transformedPlans.length} load plans`)
+        if (isMountedRef.current) {
+          setLoadPlans(transformedPlans)
+          setLastUpdated(new Date())
+          if (isPolling) {
+            console.log(`[ExportScreen] Poll complete: ${transformedPlans.length} load plans`)
+          } else {
+            console.log(`[ExportScreen] Loaded ${transformedPlans.length} load plans`)
+          }
+        }
       } else {
         // No staff - show all load plans
-        console.log('[ExportScreen] No staff logged in, showing all load plans')
+        if (!isPolling) {
+          console.log('[ExportScreen] No staff logged in, showing all load plans')
+        }
         const plans = await getLoadPlansFromSupabase()
-        setLoadPlans(plans)
-        console.log(`[ExportScreen] Loaded ${plans.length} load plans`)
+        if (isMountedRef.current) {
+          setLoadPlans(plans)
+          setLastUpdated(new Date())
+          if (isPolling) {
+            console.log(`[ExportScreen] Poll complete: ${plans.length} load plans`)
+          } else {
+            console.log(`[ExportScreen] Loaded ${plans.length} load plans`)
+          }
+        }
       }
     } catch (err: any) {
       console.error('[ExportScreen] Error fetching load plans:', err)
-      setError(err.message || 'Failed to load data')
-      setLoadPlans([])
+      // Only show error to user on manual refresh, not during polling
+      if (!isPolling && isMountedRef.current) {
+        setError(err.message || 'Failed to load data')
+        setLoadPlans([])
+      }
     } finally {
-      setLoading(false)
-      setIsRefreshing(false)
+      isPollingRef.current = false
+      if (isMountedRef.current) {
+        setLoading(false)
+        if (!isPolling) {
+          setIsRefreshing(false)
+        }
+      }
     }
-  }
-  
-  // Helper to format date
-  function formatDateForDisplay(dateStr: string | null): string {
-    if (!dateStr) return ""
-    try {
-      const date = new Date(dateStr)
-      const day = date.getDate()
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-      const month = monthNames[date.getMonth()]
-      return `${day}${month}`
-    } catch {
-      return dateStr
-    }
-  }
-  
-  // Helper to format time
-  function formatTime(timeStr: string | null): string {
-    if (!timeStr) return ""
-    return timeStr.substring(0, 5)
-  }
+  }, [staff, displayName, fetchAssignedFlights])
 
+  // Initial fetch when component mounts OR when staff changes
   useEffect(() => {
     fetchLoadPlans()
-  }, [staff?.staff_no])
+  }, [fetchLoadPlans])
+
+  // Polling effect - fetches data every POLLING_INTERVAL (only on list view)
+  useEffect(() => {
+    isMountedRef.current = true
+    
+    const pollInterval = setInterval(() => {
+      // Only poll if component is mounted, visible, on list view, and not already refreshing
+      if (isMountedRef.current && isVisibleRef.current && currentView === "list" && !isRefreshing) {
+        fetchLoadPlans(true) // Silent polling
+      }
+    }, POLLING_INTERVAL)
+    
+    // Cleanup on unmount
+    return () => {
+      isMountedRef.current = false
+      clearInterval(pollInterval)
+    }
+  }, [fetchLoadPlans, isRefreshing, currentView])
+
+  // Visibility detection - pause polling when app is backgrounded
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isVisibleRef.current = !document.hidden
+      
+      if (document.hidden) {
+        console.log('[ExportScreen] App backgrounded, pausing polling')
+      } else {
+        console.log('[ExportScreen] App foregrounded, resuming polling')
+        // Immediate refresh when coming back to foreground (only on list view)
+        if (isMountedRef.current && currentView === "list") {
+          fetchLoadPlans(true)
+        }
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [fetchLoadPlans, currentView])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -151,10 +246,6 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [lastScrollY])
-
-  const handleRefresh = async () => {
-    await fetchLoadPlans()
-  }
 
   // Fetch detail only when user clicks on a row (lazy loading)
   const handleRowClick = async (loadPlan: LoadPlan) => {
@@ -227,11 +318,18 @@ export default function ExportScreen({ onLogout, onFlightSelect, onNavigate }: E
             </button>
           </div>
 
-          <h1 className="text-base font-semibold text-gray-900">Load Plans</h1>
+          <div className="text-center">
+            <h1 className="text-base font-semibold text-gray-900">Load Plans</h1>
+            {lastUpdated && (
+              <p className="text-[10px] text-gray-400">
+                Updated {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
 
           <div className="flex items-center">
             <button
-              onClick={handleRefresh}
+              onClick={() => fetchLoadPlans(false)}
               disabled={isRefreshing}
               className="p-1 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh data"

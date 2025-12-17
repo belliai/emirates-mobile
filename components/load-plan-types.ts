@@ -19,6 +19,7 @@ export type AWBRow = {
   whs: string
   si: string
   remarks?: string
+  additional_data?: boolean  // Flag indicating if this item is new/revised (added in subsequent upload)
 }
 
 export type ULDSection = {

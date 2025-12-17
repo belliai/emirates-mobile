@@ -279,9 +279,9 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                     className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
                   >
                     {/* ULD Header - Tappable */}
-                    <button
+                    <div
                       onClick={() => toggleULD(uldKey)}
-                      className="w-full flex items-center justify-between px-3 py-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-3 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -314,7 +314,10 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                       </div>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={(e) => handleOpenULDModal(e, sectorIndex, uldSectionIndex, uldSection.uld || "BULK")}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleOpenULDModal(e, sectorIndex, uldSectionIndex, uldSection.uld || "BULK")
+                          }}
                           className="p-2 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-colors"
                           aria-label="Edit ULD numbers"
                         >
@@ -326,7 +329,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                           <ChevronRight className="h-5 w-5 text-gray-400" />
                         )}
                       </div>
-                    </button>
+                    </div>
 
                     {/* AWB List */}
                     {isULDExpanded && (
@@ -338,23 +341,30 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                           const awbStatus = awbStatuses.get(awb.awbNo)
                           const isLoaded = awbStatus?.loaded
                           const isOffloaded = awbStatus?.offloadPcs
+                          // Check if this is additional/revised data (should be highlighted)
+                          const isAdditionalData = awb.additional_data === true
 
                           return (
                             <div
                               key={awbIndex}
-                              className={isLoaded ? "bg-green-50" : isOffloaded ? "bg-orange-50" : ""}
+                              className={`${isLoaded ? "bg-green-50" : isOffloaded ? "bg-orange-50" : ""} ${isAdditionalData ? "border-l-4 border-l-red-500 bg-red-50/30" : ""}`}
                             >
                               {/* AWB Row - Tappable */}
-                              <button
+                              <div
                                 onClick={() => toggleAWB(awbKey)}
-                                className="w-full px-3 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                className="w-full px-3 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   {/* Left: AWB info */}
                                   <div className="flex-1 text-left min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-xs text-gray-400 w-5">{awb.ser}</span>
-                                      <span className="font-mono text-lg font-bold text-[#D71A21]">{awb.awbNo}</span>
+                                      <span className={`text-xs w-5 ${isAdditionalData ? "text-red-500" : "text-gray-400"}`}>{awb.ser}</span>
+                                      <span className={`font-mono text-lg font-bold ${isAdditionalData ? "text-red-600" : "text-gray-900"}`}>{awb.awbNo}</span>
+                                      {isAdditionalData && (
+                                        <span className="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">
+                                          Revised
+                                        </span>
+                                      )}
                                       {isLoaded && (
                                         <span className="px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
                                           Loaded
@@ -366,7 +376,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-xs text-gray-600 truncate mt-0.5 ml-7">
+                                    <p className={`text-xs truncate mt-0.5 ml-7 ${isAdditionalData ? "text-red-600" : "text-gray-600"}`}>
                                       {awb.manDesc || awb.pcode || "-"}
                                     </p>
                                     {hasRemarks && (
@@ -388,12 +398,15 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                   {/* Right: Pcs/Wgt and action button */}
                                   <div className="flex items-center gap-2">
                                     <div className="text-right flex-shrink-0">
-                                      <div className="text-sm font-semibold text-gray-900">{awb.pcs} pcs</div>
-                                      <div className="text-xs text-gray-500">{awb.wgt} kg</div>
+                                      <div className={`text-sm font-semibold ${isAdditionalData ? "text-red-600" : "text-gray-900"}`}>{awb.pcs} pcs</div>
+                                      <div className={`text-xs ${isAdditionalData ? "text-red-500" : "text-gray-500"}`}>{awb.wgt} kg</div>
                                     </div>
                                     {/* AWB actions button - allowed for all ULD types including BULK */}
                                     <button
-                                      onClick={(e) => handleOpenAWBAction(e, awb, uldSection.uld || "")}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleOpenAWBAction(e, awb, uldSection.uld || "")
+                                      }}
                                       className="p-2 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-colors"
                                       aria-label="AWB actions"
                                     >
@@ -401,7 +414,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
                                     </button>
                                   </div>
                                 </div>
-                              </button>
+                              </div>
 
                               {/* Expanded AWB Details */}
                               {isAWBExpanded && (

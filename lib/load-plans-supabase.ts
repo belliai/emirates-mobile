@@ -172,10 +172,12 @@ export async function getLoadPlanDetailFromSupabase(flightNumber: string): Promi
     }
 
     // Fetch load plan items
+    // Order by additional_data DESC (additional_data = true first/red on top), then by serial_number
     const { data: items, error: itemsError } = await supabase
       .from("load_plan_items")
       .select("*")
       .eq("load_plan_id", loadPlan.id)
+      .order("additional_data", { ascending: false }) // DESC: additional_data = true first (red on top)
       .order("serial_number", { ascending: true })
 
     if (itemsError) {
@@ -253,9 +255,20 @@ export async function getLoadPlanDetailFromSupabase(flightNumber: string): Promi
         })
       })
       
-      // Sort items by serial_number
-      sectorRegularItems.sort((a, b) => (parseInt(a.serial_number) || 0) - (parseInt(b.serial_number) || 0))
-      sectorRampTransferItems.sort((a, b) => (parseInt(a.serial_number) || 0) - (parseInt(b.serial_number) || 0))
+      // Sort items by additional_data DESC (red on top), then by serial_number ASC
+      const sortByAdditionalDataThenSerial = (a: any, b: any) => {
+        const aAdditional = a.additional_data === true
+        const bAdditional = b.additional_data === true
+        // FIRST PRIORITY: additional_data DESC (true first/red on top)
+        if (aAdditional !== bAdditional) {
+          return bAdditional ? 1 : -1
+        }
+        // SECOND PRIORITY: serial_number ASC
+        return (parseInt(a.serial_number) || 0) - (parseInt(b.serial_number) || 0)
+      }
+      
+      sectorRegularItems.sort(sortByAdditionalDataThenSerial)
+      sectorRampTransferItems.sort(sortByAdditionalDataThenSerial)
       
       // Create ULD sections
       const createUldSections = (items: any[], isRampTransfer: boolean) => {
@@ -268,12 +281,30 @@ export async function getLoadPlanDetailFromSupabase(flightNumber: string): Promi
           uldMap.get(uld)!.push(item)
         })
         
+        // Sort function: additional_data DESC (red on top), then serial_number ASC
+        const sortFn = (a: any, b: any) => {
+          const aAdditional = a.additional_data === true
+          const bAdditional = b.additional_data === true
+          if (aAdditional !== bAdditional) {
+            return bAdditional ? 1 : -1
+          }
+          return (parseInt(a.serial_number) || 0) - (parseInt(b.serial_number) || 0)
+        }
+        
         return Array.from(uldMap.entries())
           .map(([uld, awbs]) => ({
             uld,
-            awbs: awbs.sort((a, b) => (parseInt(a.serial_number) || 0) - (parseInt(b.serial_number) || 0))
+            awbs: awbs.sort(sortFn)
           }))
           .sort((a, b) => {
+            // Sort ULD sections: sections with additional_data items first, then by first serial_number
+            if (a.awbs.length > 0 && b.awbs.length > 0) {
+              const aFirstAdditional = a.awbs[0].additional_data === true
+              const bFirstAdditional = b.awbs[0].additional_data === true
+              if (aFirstAdditional !== bFirstAdditional) {
+                return bFirstAdditional ? 1 : -1
+              }
+            }
             const aFirst = a.awbs.length > 0 ? (parseInt(a.awbs[0].serial_number) || 0) : 0
             const bFirst = b.awbs.length > 0 ? (parseInt(b.awbs[0].serial_number) || 0) : 0
             return aFirst - bFirst
@@ -301,6 +332,7 @@ export async function getLoadPlanDetailFromSupabase(flightNumber: string): Promi
               whs: item.warehouse_code || "",
               si: item.special_instructions || "",
               remarks: item.special_notes || undefined,
+              additional_data: item.additional_data === true || item.additional_data === 1, // Flag for red styling
             })),
             isRampTransfer,
           }))
