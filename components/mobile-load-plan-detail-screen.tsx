@@ -467,44 +467,83 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
               })}
             </div>
 
-            {/* Sector Totals */}
-            {sector.totals && (
-              <div className="mx-2 mt-2 px-3 py-2 bg-gray-800 rounded-lg">
-                <div className="flex items-center justify-between text-white text-sm">
-                  <span className="font-medium">Sector Total</span>
-                  <div className="flex gap-4 text-xs">
-                    <span>{sector.totals.pcs} pcs</span>
-                    <span>{sector.totals.wgt} kg</span>
-                    <span>{sector.totals.vol} m³</span>
+            {/* Sector Totals - Calculated from displayed AWBs */}
+            {(() => {
+              // Calculate totals from all AWBs in this sector
+              const sectorTotals = sector.uldSections.reduce(
+                (acc, uldSection) => {
+                  uldSection.awbs.forEach((awb) => {
+                    acc.pcs += parseFloat(awb.pcs) || 0
+                    acc.wgt += parseFloat(awb.wgt) || 0
+                    acc.vol += parseFloat(awb.vol) || 0
+                    acc.lvol += parseFloat(awb.lvol) || 0
+                  })
+                  return acc
+                },
+                { pcs: 0, wgt: 0, vol: 0, lvol: 0 }
+              )
+              
+              return (
+                <div className="mx-2 mt-2 px-3 py-2 bg-gray-800 rounded-lg">
+                  <div className="flex items-center justify-between text-white text-sm">
+                    <span className="font-medium">Sector Total</span>
+                    <div className="flex gap-3 text-xs">
+                      <span>{sectorTotals.pcs} pcs</span>
+                      <span>{sectorTotals.wgt.toFixed(2)} kg</span>
+                      <span>{sectorTotals.vol.toFixed(2)} m³</span>
+                      <span>{sectorTotals.lvol.toFixed(2)} m³</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
           </div>
         ))}
 
-        {/* Overall Totals */}
-        {loadPlan.totals && (
-          <div className="mx-2 mt-4 px-3 py-3 bg-[#D71A21] rounded-lg">
-            <div className="flex items-center justify-between text-white">
-              <span className="font-semibold">Total</span>
-              <div className="flex gap-4 text-sm">
-                <div className="text-center">
-                  <div className="font-bold">{loadPlan.totals.pcs}</div>
-                  <div className="text-xs opacity-80">pcs</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-bold">{loadPlan.totals.wgt}</div>
-                  <div className="text-xs opacity-80">kg</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-bold">{loadPlan.totals.vol}</div>
-                  <div className="text-xs opacity-80">m³</div>
+        {/* Overall Totals - Calculated from all AWBs */}
+        {(() => {
+          // Calculate totals from all AWBs across all sectors
+          const overallTotals = loadPlan.sectors.reduce(
+            (acc, sector) => {
+              sector.uldSections.forEach((uldSection) => {
+                uldSection.awbs.forEach((awb) => {
+                  acc.pcs += parseFloat(awb.pcs) || 0
+                  acc.wgt += parseFloat(awb.wgt) || 0
+                  acc.vol += parseFloat(awb.vol) || 0
+                  acc.lvol += parseFloat(awb.lvol) || 0
+                })
+              })
+              return acc
+            },
+            { pcs: 0, wgt: 0, vol: 0, lvol: 0 }
+          )
+          
+          return (
+            <div className="mx-2 mt-4 px-3 py-3 bg-[#D71A21] rounded-lg">
+              <div className="flex items-center justify-between text-white">
+                <span className="font-semibold">Total</span>
+                <div className="flex gap-3 text-sm">
+                  <div className="text-center">
+                    <div className="font-bold">{overallTotals.pcs}</div>
+                    <div className="text-xs opacity-80">pcs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold">{overallTotals.wgt.toFixed(2)}</div>
+                    <div className="text-xs opacity-80">kg</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold">{overallTotals.vol.toFixed(2)}</div>
+                    <div className="text-xs opacity-80">m³</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold">{overallTotals.lvol.toFixed(2)}</div>
+                    <div className="text-xs opacity-80">lvol</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Baggage Info */}
         {loadPlan.bagg && (
