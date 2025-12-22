@@ -1038,6 +1038,7 @@ export default function MobileLoadPlanModal({ loadPlan, isOpen, onClose, isFullS
             setSelectedULDSection(null)
           }}
           uldSection={selectedULDSection.uld}
+          ttlPlnUld={loadPlan.ttlPlnUld} // Use TTL PLN ULD from header as source of truth
           sectorIndex={selectedULDSection.sectorIndex}
           uldSectionIndex={selectedULDSection.uldSectionIndex}
           initialNumbers={uldNumbers.get(`${selectedULDSection.sectorIndex}-${selectedULDSection.uldSectionIndex}`) || []}
