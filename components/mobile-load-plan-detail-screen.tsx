@@ -228,11 +228,11 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
             <div className="text-xs text-gray-500 truncate">
               {loadPlan.pax} • STD {loadPlan.std}
             </div>
-            {loadPlan.ttlPlnUld && (
+            {(loadPlan.adjustedTtlPlnUld || loadPlan.ttlPlnUld) && (
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="text-xs font-medium text-[#D71A21]">TTL ULD:</span>
                 <span className="text-xs font-mono font-semibold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded">
-                  {loadPlan.ttlPlnUld}
+                  {loadPlan.adjustedTtlPlnUld || loadPlan.ttlPlnUld}
                 </span>
               </div>
             )}
@@ -573,7 +573,7 @@ export default function MobileLoadPlanDetailScreen({ loadPlan, onBack }: MobileL
             setSelectedULDSection(null)
           }}
           uldSection={selectedULDSection.uldSection}
-          ttlPlnUld={loadPlan.ttlPlnUld} // Use TTL PLN ULD from header as source of truth
+          ttlPlnUld={loadPlan.adjustedTtlPlnUld || loadPlan.ttlPlnUld} // Use adjusted TTL PLN ULD if available (excludes COUR/MAIL/RAMP TRANSFER)
           sectorIndex={selectedULDSection.sectorIndex}
           uldSectionIndex={selectedULDSection.uldSectionIndex}
           initialNumbers={selectedULDSection.initialNumbers}

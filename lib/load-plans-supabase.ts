@@ -10,6 +10,7 @@ export type LoadPlan = {
   pax: string
   std: string
   ttlPlnUld: string
+  adjustedTtlPlnUld?: string // TTL PLN ULD minus COUR/MAIL/RAMP TRANSFER exclusions
   uldVersion: string
 }
 
@@ -131,6 +132,7 @@ export async function getLoadPlansFromSupabase(): Promise<LoadPlan[]> {
         std: formatTime(plan.std_time),
         uldVersion: plan.uld_version || "",
         ttlPlnUld: plan.total_planned_uld || "",
+        adjustedTtlPlnUld: plan.adjusted_ttl_pln_uld || undefined,
       }
     })
 
@@ -367,6 +369,7 @@ export async function getLoadPlanDetailFromSupabase(flightNumber: string): Promi
       std: formatTime(loadPlan.std_time),
       preparedBy: loadPlan.prepared_by || "",
       ttlPlnUld: loadPlan.total_planned_uld || "",
+      adjustedTtlPlnUld: loadPlan.adjusted_ttl_pln_uld || undefined,
       uldVersion: loadPlan.uld_version || "",
       preparedOn: formatDateTime(loadPlan.prepared_on),
       sectors,
